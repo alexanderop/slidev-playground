@@ -1,0 +1,102 @@
+html.dark .shiki {
+  color: var(--shiki-dark, inherit);
+}
+
+html.dark .shiki span {
+  color: var(--shiki-dark);
+}
+
+html:not(.dark) .shiki {
+  color: var(--shiki-light, inherit);
+}
+
+html:not(.dark) .shiki span {
+  color: var(--shiki-light);
+}
+
+.slidev-layout pre {
+  margin: var(--slidev-code-margin) !important;
+  overflow: auto;
+  scroll-padding: var(--slidev-code-padding);
+  font-family: var(--slidev-code-font-family) !important;
+  font-size: var(--slidev-code-font-size) !important;
+  line-height: var(--slidev-code-line-height) !important;
+  border-radius: var(--slidev-code-radius) !important;
+  background: var(--slidev-code-background);
+}
+
+.slidev-code-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: var(--slidev-code-margin);
+}
+
+.slidev-code-title {
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px 12px 0 0;
+  background: color-mix(in srgb, var(--slidev-code-background) 86%, black 12%);
+  color: var(--shell-text-dim);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+.slidev-code-frame :where(pre) {
+  margin: 0 !important;
+  padding: var(--slidev-code-padding) !important;
+  border-radius: 0 0 var(--slidev-code-radius) var(--slidev-code-radius) !important;
+}
+
+.slidev-code-frame .line {
+  display: block;
+  min-height: 1.45em;
+}
+
+.slidev-code-frame .line.highlighted {
+  background: color-mix(in srgb, var(--slidev-theme-primary) 18%, transparent);
+  margin: 0 calc(-1 * var(--slidev-code-padding));
+  padding: 0 var(--slidev-code-padding);
+}
+
+.slidev-code-frame .line[data-line]::before {
+  content: attr(data-line);
+  display: inline-block;
+  width: 2ch;
+  margin-right: 1rem;
+  opacity: 0.45;
+  text-align: right;
+}
+
+.slidev-mermaid-block {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--slidev-code-background) 72%, transparent);
+}
+
+.slidev-mermaid-block :where(svg) {
+  max-width: 100%;
+  height: auto;
+}
+
+.slidev-layout pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  border-radius: 0;
+}
+
+.slidev-layout :not(pre) > code,
+.slide-content-notes :not(pre) > code {
+  font-size: 0.9em;
+  background: var(--slidev-code-background);
+  border-radius: var(--slidev-code-radius);
+  @apply font-light py-0.5 px-1.5;
+}
+
+.slidev-layout :not(pre) > code::before,
+.slide-content-notes :not(pre) > code::before,
+.slide-content-notes :not(pre) > code::after {
+  content: '';
+}

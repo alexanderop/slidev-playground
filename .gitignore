@@ -1,0 +1,6 @@
+node_modules
+dist
+coverage
+.vite-hooks
+.vitest-attachments
+*.local

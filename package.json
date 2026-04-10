@@ -1,0 +1,67 @@
+{
+  "name": "slidev-playground",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vp dev",
+    "build": "vp build",
+    "preview": "vp preview",
+    "check": "vp check && vp exec eslint --no-warn-ignored .",
+    "lint": "vp lint && vp exec eslint --no-warn-ignored .",
+    "lint:vue": "vp exec eslint --no-warn-ignored .",
+    "fmt": "vp fmt",
+    "test": "vp test",
+    "test:coverage": "vp test --coverage",
+    "prepare": "vp config"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/language-data": "^6.5.2",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/theme-one-dark": "^6.1.3",
+    "@codemirror/view": "^6.36.8",
+    "@shikijs/engine-javascript": "^4.0.2",
+    "@shikijs/markdown-it": "^4.0.2",
+    "@slidev/parser": "^52.14.2",
+    "@traptitech/markdown-it-katex": "^3.6.0",
+    "@vueuse/core": "^14.2.1",
+    "codemirror": "^6.0.2",
+    "katex": "^0.16.45",
+    "lz-string": "^1.5.0",
+    "markdown-it": "^14.1.0",
+    "mermaid": "^11.14.0",
+    "shiki": "^4.0.2",
+    "vue": "^3.5.32"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@unocss/extractor-mdc": "^66.6.8",
+    "@unocss/preset-attributify": "^66.6.8",
+    "@unocss/preset-typography": "^66.6.8",
+    "@unocss/preset-wind3": "^66.6.8",
+    "@unocss/reset": "^66.6.8",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vitest/browser-playwright": "^4.1.3",
+    "@vitest/coverage-v8": "^4.1.3",
+    "@vue/eslint-config-typescript": "^14.7.0",
+    "eslint": "^10.2.0",
+    "eslint-plugin-oxlint": "^1.59.0",
+    "eslint-plugin-vue": "^10.8.0",
+    "playwright": "^1.59.1",
+    "typescript": "^5.9.3",
+    "unocss": "^66.6.8",
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+    "vite-plus": "latest",
+    "vitest-browser-vue": "^2.1.0",
+    "vue-eslint-parser": "^10.4.0"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+      "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+    }
+  }
+}
