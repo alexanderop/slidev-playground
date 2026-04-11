@@ -67,7 +67,7 @@ watchEffect(async () => {
 </script>
 
 <template>
-  <div class="slidev-code-block">
+  <div class="slidev-code-block" :data-title="filename || undefined">
     <div v-if="filename" class="slidev-code-title">{{ filename }}</div>
     <SlidevErrorBlock v-if="renderError" :message="renderError" />
     <!-- eslint-disable vue/no-v-html -->

@@ -30,6 +30,14 @@ official Slidev starter template (`sli.dev/new`).
 - `src/components/SlidevPoweredBy.vue` — "Powered by Slidev" link
 - Registered as `Arrow`, `Youtube`, `PoweredBySlidev` in `compileSlideTemplate()`
 
+#### 1.3.1 CodeGroup (Tabbed Code Blocks)
+
+- `src/features/slides/components/SlidevCodeGroup.vue` — tabbed container that discovers child `SlidevCodeBlock` elements via `data-title` attribute, renders tab bar, toggles active block via CSS class
+- `src/features/slides/components/SlidevCodeBlock.vue` — added `data-title` attribute to root div for CodeGroup discovery
+- Registered as `CodeGroup` in `compileSlideTemplate()`
+- CSS in `src/styles/slidev-layouts.css` (`.slidev-code-group-*`)
+- Usage: wrap code fences with `<CodeGroup>` tags; each fence must have a `[filename]` bracket
+
 #### 1.4 `$slidev.nav` Context
 
 - `src/injection-keys.ts` — added `SlidevNav` interface and `slidevNavKey`

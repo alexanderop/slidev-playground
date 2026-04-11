@@ -288,6 +288,54 @@
   max-height: 400px;
 }
 
+/* CodeGroup tabs */
+.slidev-code-group-tabs {
+  display: flex;
+  background: var(--slidev-code-background, #1e1e1e);
+  border-radius: 6px 6px 0 0;
+  overflow: hidden;
+}
+
+.slidev-code-tab {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--slidev-code-tab-text-color, #888);
+  border-bottom: 2px solid transparent;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+  user-select: none;
+}
+
+.slidev-code-tab:hover {
+  color: var(--slidev-code-tab-active-text-color, #ddd);
+}
+
+.slidev-code-tab.active {
+  color: var(--slidev-code-tab-active-text-color, #ddd);
+  border-bottom-color: var(--theme-accent, #7c3aed);
+}
+
+/* Hide non-active code blocks in group */
+.slidev-code-group-blocks .slidev-code-block {
+  display: none;
+}
+
+.slidev-code-group-blocks .slidev-code-block.active {
+  display: block;
+}
+
+/* Remove title from code blocks inside group (tabs replace it) */
+.slidev-code-group-blocks .slidev-code-title {
+  display: none;
+}
+
+/* Remove top border-radius from code inside group */
+.slidev-code-group-blocks .slidev-code-frame {
+  border-radius: 0 0 6px 6px;
+}
+
 @media (max-width: 900px) {
   .slidev-layout-two-cols,
   .slidev-layout-image-left,
