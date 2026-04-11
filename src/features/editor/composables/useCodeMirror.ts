@@ -6,6 +6,7 @@ import { EditorState } from '@codemirror/state'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView, keymap, lineNumbers } from '@codemirror/view'
 import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
+import { slideBoundaries } from './slideBoundaries'
 
 export function useCodeMirror(
   container: Ref<HTMLElement | null>,
@@ -47,6 +48,7 @@ export function useCodeMirror(
         EditorView.contentAttributes.of({
           'aria-label': 'Slide markdown editor',
         }),
+        ...slideBoundaries,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             ignoreNextUpdate = true

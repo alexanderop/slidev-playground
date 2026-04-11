@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import { parseSync } from '@slidev/parser'
+import { useFullscreen } from '@vueuse/core'
 import { computed, onMounted, onUnmounted, provide, ref, watch, watchEffect } from 'vue'
 
 import EditorLayout from '../features/editor/components/EditorLayout.vue'
@@ -93,31 +94,11 @@ function toggleRuntimeDarkMode() {
   runtimeColorSchema.value = nextMode
 }
 
-async function toggleFullscreen() {
-  if (document.fullscreenElement) {
-    if (typeof document.exitFullscreen === 'function') {
-      await document.exitFullscreen()
-      return
-    }
-    throw new Error('Fullscreen exit is not supported')
-  }
-
-  if (typeof document.documentElement.requestFullscreen === 'function') {
-    await document.documentElement.requestFullscreen()
-    return
-  }
-
-  throw new Error('Fullscreen is not supported')
-}
-
-function notifyUnsupported() {
-  window.alert('upsi')
-}
+const { toggle: toggleFullscreen } = useFullscreen()
 
 const presentation = usePresentation(() => renderedSlides.value, {
   toggleDark: toggleRuntimeDarkMode,
   toggleFullscreen,
-  notifyUnsupported,
 })
 const presentationClick = computed(() =>
   presentation.presenting.value ? presentation.currentClick.value : 0,

@@ -1,22 +1,22 @@
 <script setup lang="ts">
+import type { Highlighter } from 'shiki'
 import { ShikiMagicMove } from 'shiki-magic-move/vue'
 import 'shiki-magic-move/dist/style.css'
 import { computed, inject, ref, shallowRef, watchEffect } from 'vue'
 import { presentationClickKey } from '../../../config/injection-keys'
 import { getShikiHighlighter } from '../shiki'
 
-const props = defineProps<{
+const { steps, lang } = defineProps<{
   steps: string
   lang: string
 }>()
 
 const currentClick = inject(presentationClickKey, ref(0))
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const highlighter = shallowRef<any>(null)
+const highlighter = shallowRef<Highlighter | null>(null)
 
 const parsedSteps = computed<Array<{ code: string; lang: string }>>(() => {
   try {
-    return JSON.parse(decodeURIComponent(props.steps))
+    return JSON.parse(decodeURIComponent(steps))
   } catch {
     return []
   }

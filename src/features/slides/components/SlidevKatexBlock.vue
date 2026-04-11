@@ -2,7 +2,7 @@
 import { computed, inject, onMounted, ref, watchEffect } from 'vue'
 import { presentationClickKey } from '../../../config/injection-keys'
 
-const props = defineProps<{
+const { ranges } = defineProps<{
   ranges: string
 }>()
 
@@ -11,7 +11,7 @@ const currentClick = inject(presentationClickKey, ref(0))
 
 const parsedRanges = computed<string[]>(() => {
   try {
-    return JSON.parse(props.ranges)
+    return JSON.parse(ranges)
   } catch {
     return []
   }
@@ -84,6 +84,6 @@ onMounted(() => {
 
 <template>
   <div ref="el" class="slidev-katex-wrapper">
-    <slot />
+    <slot></slot>
   </div>
 </template>

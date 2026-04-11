@@ -1,23 +1,27 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps<{
+const {
+  id,
+  width = 560,
+  height = 315,
+} = defineProps<{
   id: string
   width?: number | string
   height?: number | string
 }>()
 
-const src = computed(() => `https://www.youtube.com/embed/${props.id}`)
+const src = computed(() => `https://www.youtube.com/embed/${id}`)
 </script>
 
 <template>
   <iframe
     class="slidev-youtube"
     :src="src"
-    :width="width ?? 560"
-    :height="height ?? 315"
+    :width="width"
+    :height="height"
     frameborder="0"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
     allowfullscreen
-  />
+  ></iframe>
 </template>

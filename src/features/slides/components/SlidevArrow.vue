@@ -1,24 +1,25 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = withDefaults(
-  defineProps<{
-    x1: number | string
-    y1: number | string
-    x2: number | string
-    y2: number | string
-    width?: number | string
-    color?: string
-  }>(),
-  {
-    width: 2,
-    color: 'currentColor',
-  },
-)
+const {
+  x1,
+  y1,
+  x2,
+  y2,
+  width = 2,
+  color = 'currentColor',
+} = defineProps<{
+  x1: number | string
+  y1: number | string
+  x2: number | string
+  y2: number | string
+  width?: number | string
+  color?: string
+}>()
 
-const markerId = computed(() => `arrow-${props.x1}-${props.y1}-${props.x2}-${props.y2}`)
-const svgWidth = computed(() => Math.max(+props.x1, +props.x2) + 50)
-const svgHeight = computed(() => Math.max(+props.y1, +props.y2) + 50)
+const markerId = computed(() => `arrow-${x1}-${y1}-${x2}-${y2}`)
+const svgWidth = computed(() => Math.max(+x1, +x2) + 50)
+const svgHeight = computed(() => Math.max(+y1, +y2) + 50)
 </script>
 
 <template>

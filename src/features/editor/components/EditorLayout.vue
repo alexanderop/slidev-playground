@@ -7,15 +7,16 @@ import CodeMirrorEditor from './CodeMirrorEditor.vue'
 import ConfigPanel from './ConfigPanel.vue'
 import SlidePreview from '../../../components/SlidePreview.vue'
 
-const props = defineProps<{
-  markdown: string
-  componentFiles: Record<string, string>
-  config: SlidevConfig
-  renderedSlides: RenderedSlide[]
-  splitPercent: number
-  slideScale: number
-  copied: boolean
-}>()
+const { markdown, componentFiles, config, renderedSlides, splitPercent, slideScale, copied } =
+  defineProps<{
+    markdown: string
+    componentFiles: Record<string, string>
+    config: SlidevConfig
+    renderedSlides: RenderedSlide[]
+    splitPercent: number
+    slideScale: number
+    copied: boolean
+  }>()
 
 const emit = defineEmits<{
   'update:markdown': [value: string]
@@ -31,13 +32,13 @@ const editorView = defineModel<EditorView | null>('editorView', { required: true
 const activeTab = ref<string>('slides.md')
 const configOpen = ref(false)
 
-const fileNames = computed(() => Object.keys(props.componentFiles))
+const fileNames = computed(() => Object.keys(componentFiles))
 
 function activeFileContent(): string {
   if (activeTab.value === 'slides.md') {
-    return props.markdown
+    return markdown
   }
-  return props.componentFiles[activeTab.value] ?? ''
+  return componentFiles[activeTab.value] ?? ''
 }
 
 function onEditorUpdate(value: string) {
@@ -46,7 +47,7 @@ function onEditorUpdate(value: string) {
     return
   }
   emit('update:componentFiles', {
-    ...props.componentFiles,
+    ...componentFiles,
     [activeTab.value]: value,
   })
 }
@@ -54,19 +55,19 @@ function onEditorUpdate(value: string) {
 function addFile() {
   let index = 1
   let name = `Comp${index}.vue`
-  while (props.componentFiles[name] !== undefined) {
+  while (componentFiles[name] !== undefined) {
     index++
     name = `Comp${index}.vue`
   }
   emit('update:componentFiles', {
-    ...props.componentFiles,
+    ...componentFiles,
     [name]: `<script setup>\n<\u002Fscript>\n\n<template>\n  <div>\n    <!-- ${name.replace('.vue', '')} -->\n  </div>\n</template>\n`,
   })
   activeTab.value = name
 }
 
 function removeFile(name: string) {
-  const next = { ...props.componentFiles }
+  const next = { ...componentFiles }
   delete next[name]
   emit('update:componentFiles', next)
   if (activeTab.value === name) {

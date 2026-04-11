@@ -1,4 +1,5 @@
 import type { Ref } from 'vue'
+import { usePreferredDark } from '@vueuse/core'
 import { computed, watchEffect } from 'vue'
 
 type Mode = 'light' | 'dark'
@@ -15,6 +16,8 @@ export interface ThemeOptions {
 export function useTheme(options: ThemeOptions = {}) {
   const { frontmatterPrimary, frontmatterColorSchema, themeConfig, runtimeColorSchema } = options
 
+  const prefersDark = usePreferredDark()
+
   const effectiveMode = computed<Mode>(() => {
     const runtime = runtimeColorSchema?.value ?? 'auto'
     if (runtime === 'dark' || runtime === 'light') {
@@ -27,7 +30,7 @@ export function useTheme(options: ThemeOptions = {}) {
     }
 
     if ((fm ?? 'auto') === 'auto') {
-      return getPreferredMode()
+      return prefersDark.value ? 'dark' : 'light'
     }
 
     return 'light'
@@ -75,14 +78,6 @@ export function useTheme(options: ThemeOptions = {}) {
 /** @internal Reset module state for testing */
 export function _resetThemeForTesting() {
   initialized = false
-}
-
-function getPreferredMode(): Mode {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return 'light'
-  }
-
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 /**

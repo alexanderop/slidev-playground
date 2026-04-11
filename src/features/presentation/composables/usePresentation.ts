@@ -9,7 +9,6 @@ export interface SlideInfo {
 interface PresentationOptions {
   toggleDark?: () => void
   toggleFullscreen?: () => void | Promise<void>
-  notifyUnsupported?: () => void
 }
 
 function isShortcutBlocked(): boolean {
@@ -24,7 +23,7 @@ function isShortcutBlocked(): boolean {
 }
 
 export function usePresentation(getSlides: () => SlideInfo[], options: PresentationOptions = {}) {
-  const { toggleDark, toggleFullscreen, notifyUnsupported } = options
+  const { toggleDark, toggleFullscreen } = options
   const presenting = ref(false)
   const currentSlide = ref(0)
   const currentClick = ref(0)
@@ -133,15 +132,10 @@ export function usePresentation(getSlides: () => SlideInfo[], options: Presentat
 
   async function tryToggleFullscreen() {
     if (!toggleFullscreen || !presenting.value) {
-      notifyUnsupported?.()
       return
     }
 
-    try {
-      await toggleFullscreen()
-    } catch {
-      notifyUnsupported?.()
-    }
+    await toggleFullscreen()
   }
 
   if (typeof window !== 'undefined') {

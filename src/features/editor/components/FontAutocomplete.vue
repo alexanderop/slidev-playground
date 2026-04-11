@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onClickOutside } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 const {
@@ -16,7 +17,12 @@ const emit = defineEmits<{
 }>()
 
 const open = ref(false)
+const wrapperRef = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLInputElement | null>(null)
+
+onClickOutside(wrapperRef, () => {
+  open.value = false
+})
 
 const filtered = computed(() => {
   const query = modelValue.toLowerCase()
@@ -40,17 +46,10 @@ function select(font: string) {
 function onFocus() {
   open.value = true
 }
-
-function onBlur() {
-  // Delay to allow click on suggestion
-  setTimeout(() => {
-    open.value = false
-  }, 150)
-}
 </script>
 
 <template>
-  <div class="font-autocomplete">
+  <div ref="wrapperRef" class="font-autocomplete">
     <input
       ref="inputRef"
       type="text"
@@ -59,7 +58,6 @@ function onBlur() {
       :placeholder="placeholder"
       @input="onInput"
       @focus="onFocus"
-      @blur="onBlur"
     />
     <ul v-if="open && filtered.length > 0" class="suggestions">
       <li

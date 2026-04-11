@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps<{
+const { noteHtml, currentClick = 0 } = defineProps<{
   noteHtml: string
   currentClick?: number
 }>()
 
 const visibleHtml = computed(() => {
-  const html = props.noteHtml
-  const click = props.currentClick ?? 0
+  const html = noteHtml
+  const click = currentClick
 
   if (!html.includes('[click')) {
     return html

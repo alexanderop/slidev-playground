@@ -2,6 +2,7 @@ import { EditorView } from '@codemirror/view'
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
 import { render } from 'vitest-browser-vue'
 import { nextTick } from 'vue'
+import { z } from 'zod/mini'
 import App from '../app/App.vue'
 import { _resetThemeForTesting } from '../composables/useTheme'
 import { clearComponentCache } from '../features/slides/render'
@@ -43,6 +44,11 @@ export function decodeDeck(hash: string) {
   return decompressFromEncodedURIComponent(hash) ?? ''
 }
 
+const PlaygroundStateSchema = z.object({
+  m: z.string(),
+  c: z.optional(z.record(z.string(), z.string())),
+})
+
 export function decodePlaygroundState(hash: string): {
   markdown: string
   componentFiles: Record<string, string>
@@ -50,15 +56,9 @@ export function decodePlaygroundState(hash: string): {
   const raw = decompressFromEncodedURIComponent(hash) ?? ''
   if (raw.startsWith('{')) {
     try {
-      const parsed: unknown = JSON.parse(raw)
-      if (typeof parsed === 'object' && parsed !== null) {
-        const obj = parsed as Record<string, unknown>
-        const markdown = typeof obj.m === 'string' ? obj.m : ''
-        const componentFiles =
-          typeof obj.c === 'object' && obj.c !== null && !Array.isArray(obj.c)
-            ? (obj.c as Record<string, string>)
-            : {}
-        return { markdown, componentFiles }
+      const result = PlaygroundStateSchema.safeParse(JSON.parse(raw))
+      if (result.success) {
+        return { markdown: result.data.m, componentFiles: result.data.c ?? {} }
       }
       return { markdown: raw, componentFiles: {} }
     } catch {

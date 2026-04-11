@@ -16,23 +16,12 @@ it('Given presentation mode When runtime shortcuts are used Then dark mode and f
   expect(app.exitFullscreenSpy).toHaveBeenCalledTimes(1)
 })
 
-it('Given fullscreen is unavailable When the user presses f Then the app shows the unsupported alert', async () => {
-  using app = await AppPage.render({ markdown: TWO_SLIDE_DECK })
-  Reflect.deleteProperty(Element.prototype, 'requestFullscreen')
-
-  const presentation = await app.present()
-  await presentation.pressKey('f')
-
-  expect(app.alertSpy).toHaveBeenCalledWith('upsi')
-})
-
 it('Given the app is not presenting When the user presses f Then fullscreen is ignored', async () => {
   using app = await AppPage.render({ markdown: TWO_SLIDE_DECK })
 
   await app.pressShortcut('f')
 
   expect(app.requestFullscreenSpy).not.toHaveBeenCalled()
-  expect(app.alertSpy).not.toHaveBeenCalled()
 })
 
 it('Given a deck with explicit dark colorSchema When the user presses d Then runtime dark mode still toggles', async () => {
