@@ -2,6 +2,7 @@ import type { Component } from 'vue'
 import MarkdownIt from 'markdown-it'
 import { compile, defineComponent, inject, markRaw } from 'vue'
 import SlidevArrow from './components/SlidevArrow.vue'
+import SlidevAutoFitText from './components/SlidevAutoFitText.vue'
 import SlidevCodeBlock from './components/SlidevCodeBlock.vue'
 import SlidevErrorBlock from './components/SlidevErrorBlock.vue'
 import SlidevIcon from './components/SlidevIcon.vue'
@@ -146,6 +147,8 @@ function compileSlideTemplate(
           SlidevMermaidBlock,
           SlidevPlantUmlBlock,
           Arrow: SlidevArrow,
+          AutoFitText: SlidevAutoFitText,
+          autofittext: SlidevAutoFitText,
           Youtube: SlidevYoutube,
           PoweredBySlidev: SlidevPoweredBy,
           ...customComponents,
