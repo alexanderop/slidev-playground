@@ -8,9 +8,10 @@
   --slidev-fonts-mono:
     'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
+  --slidev-fonts-display: 'Inter', var(--slidev-fonts-sans);
 
-  --slidev-code-background: #f5f5f5;
-  --slidev-code-foreground: #1b1b1b;
+  --slidev-code-background: var(--surface-code);
+  --slidev-code-foreground: var(--text-primary);
   --slidev-code-font-family:
     'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
@@ -19,19 +20,14 @@
   --slidev-code-line-height: 18px;
   --slidev-code-radius: 4px;
   --slidev-code-margin: 4px 0;
-  --slidev-code-tab-divider: #e5e5e5;
-  --slidev-code-tab-text-color: #67676c;
+  --slidev-code-tab-divider: var(--border-subtle);
+  --slidev-code-tab-text-color: var(--text-secondary);
   --slidev-code-tab-font-size: 12px;
-  --slidev-code-tab-active-text-color: #3c3c43;
+  --slidev-code-tab-active-text-color: var(--text-primary);
 
   --slidev-transition-duration: 0.5s;
 }
 
 html.dark:root {
   color-scheme: dark;
-  --slidev-code-background: #1b1b1b;
-  --slidev-code-foreground: #eee;
-  --slidev-code-tab-divider: #222222;
-  --slidev-code-tab-text-color: #98989f;
-  --slidev-code-tab-active-text-color: #dfdfd6;
 }

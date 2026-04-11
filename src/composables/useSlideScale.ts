@@ -1,9 +1,9 @@
 import type { Ref } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
 import { inject, nextTick, ref, watch } from 'vue'
-import { PREVIEW_PADDING } from '../constants'
-import { slideDimensionsKey } from '../injection-keys'
-import type { SlideDimensions } from '../injection-keys'
+import { PREVIEW_PADDING } from '../config/constants'
+import { slideDimensionsKey } from '../config/injection-keys'
+import type { SlideDimensions } from '../config/injection-keys'
 
 export function getPreviewSlideScale(
   containerWidth: number,

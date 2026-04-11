@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
-import { slideDimensionsKey } from '../injection-keys'
+import { slideDimensionsKey } from '../config/injection-keys'
 import type { RenderedSlide } from '../types'
 import ScopedSlideStyles from './ScopedSlideStyles.vue'
 import SlideLayoutHost from './SlideLayoutHost'
@@ -25,14 +25,18 @@ const contentStyle = computed(() => {
     base.backgroundImage = `url(${imageBackground})`
     base.backgroundSize = 'cover'
     base.backgroundPosition = 'center'
-  } else if (bg) {
+    return base
+  }
+
+  if (bg) {
     const isImage =
       /^(https?:|\/|\.\/|data:)/.test(bg) || /\.(png|jpe?g|gif|svg|webp|avif)/i.test(bg)
     if (isImage) {
       base.backgroundImage = `url(${bg})`
       base.backgroundSize = 'cover'
       base.backgroundPosition = 'center'
-    } else {
+    }
+    if (!isImage) {
       base.background = bg
     }
   }

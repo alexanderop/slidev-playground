@@ -62,13 +62,14 @@ export function useFontLoader(fonts: Ref<ResolvedFontOptions>) {
 
     if (existing instanceof HTMLLinkElement) {
       existing.href = url
-    } else {
-      const link = document.createElement('link')
-      link.id = LINK_ID
-      link.rel = 'stylesheet'
-      link.href = url
-      document.head.append(link)
+      return
     }
+
+    const link = document.createElement('link')
+    link.id = LINK_ID
+    link.rel = 'stylesheet'
+    link.href = url
+    document.head.append(link)
   }
 
   watch(

@@ -4,65 +4,41 @@ This document explains the testing philosophy and setup for this project.
 
 ## Philosophy
 
-### App-First Browser Testing
+### Browser-Only, App-First Testing
 
-Browser tests should render the real application through `App.vue` and verify
-flows the way a user experiences them: editing slides, checking preview output,
-presenting, navigating, opening notes/overview, and sharing the deck.
+All tests run in Vitest browser mode (Playwright/Chromium) and render the real
+`App.vue`. There are no Node-based unit tests. Every test exercises the app the
+way a user experiences it: editing slides, checking preview output, presenting,
+navigating, opening notes/overview, and sharing the deck.
 
-If a browser test only mounts a leaf component, it should be treated as an
-exception. The default assumption is that browser mode exists to validate the
-entire app shell working together.
+### Flat Tests, No Hooks
 
-### Keep Pure Logic Pure
+Tests are flat — no `describe` nesting, no `beforeEach`/`afterEach`. File names
+serve as grouping (`deck-loading.browser.test.ts`, `share-flow.browser.test.ts`).
 
-Extract logic into composables so it can still be tested as plain functions in
-Node when no real browser behavior is involved. Node tests remain the fast path
-for transformations, helpers, and composables that do not need the full app.
+All cleanup is handled by **disposable objects** via `Symbol.dispose`. The
+`using` keyword guarantees cleanup runs even when assertions throw — no leaked
+state between tests, no hidden `afterEach` in a setup file.
 
-### The Testing Pyramid (Inverted)
+```ts
+// Cleanup happens automatically when `app` goes out of scope
+using app = await AppPage.render({ markdown: MY_DECK })
+```
 
-We follow an inverted testing pyramid:
-
-| Layer                           | Share | What it covers                         |
-| ------------------------------- | ----- | -------------------------------------- |
-| **Integration tests** (browser) | ~70%  | User flows rendered in a real browser  |
-| **Unit tests** (Node)           | ~20%  | Pure composable/function logic         |
-| **A11y / visual tests**         | ~10%  | Accessibility audits, screenshot diffs |
-
-Integration tests form the bulk because Vitest browser mode makes them fast and
-reliable. They should render the whole app, click real buttons, use keyboard
-shortcuts, and assert on what the user actually sees.
+This follows the principle from [Better Test Setup with Disposable Objects](https://www.epicweb.dev/better-test-setup-with-disposable-objects):
+collocate setup and cleanup in one place, keep test cases self-contained.
 
 ### Mocking Rules
 
 The less you mock, the more your tests are worth. Mock only what you cannot
 control:
 
-- External APIs / network calls (use MSW)
+- Browser APIs that need deterministic behavior (`navigator.share`,
+  `navigator.clipboard`, `document.exitFullscreen`)
 - System boundaries (time, randomness)
-- Paid third-party services
 
 Never mock your own code to make tests easier. If something is hard to test
 without internal mocks, refactor the code instead.
-
-### Factories Over Copy-Paste
-
-Use factory functions to create test data. Define sensible defaults once and
-override only what matters for a given test:
-
-```ts
-const defaultSlide: SlideInfo = { totalClicks: 0 }
-
-function createSlide(overrides: Partial<SlideInfo> = {}): SlideInfo {
-  return { ...defaultSlide, ...overrides }
-}
-
-// Usage
-const slide = createSlide({ totalClicks: 3, transition: 'fade' })
-```
-
-This keeps tests focused on intent and makes schema changes a one-line fix.
 
 ### Prefer `getByRole` Over Test IDs
 
@@ -79,119 +55,153 @@ component, not the test.
 vp add -D @vitest/browser-playwright @vitest/coverage-v8 playwright vitest-browser-vue
 ```
 
-### Configure Test Projects
+### Configure Tests
 
-The two test projects are defined in `vite.config.ts` under the `test` key.
-Node runs `*.test.ts` files; browser runs `*.browser.test.ts` files via
-Playwright/Chromium. See the config section below for details.
+Tests are configured as a single browser project in `vite.config.ts` under the
+`test` key. All `*.browser.test.ts` files run in Chromium via Playwright.
+There is no global setup file — cleanup lives inside the disposable objects.
 
-## Two Test Projects
+## Writing a New Test
 
-Vitest is configured with two separate projects in `vite.config.ts`:
+### 1. Build a deck with the deck builder
 
-| Project     | File pattern               | Environment           | Use case                                   |
-| ----------- | -------------------------- | --------------------- | ------------------------------------------ |
-| **unit**    | `src/**/*.test.ts`         | Node                  | Pure logic that doesn't touch the DOM      |
-| **browser** | `src/**/*.browser.test.ts` | Chromium (Playwright) | Tests that need a real browser environment |
-
-Both projects run together via `vp test`.
-
-## When to Use Which Environment
-
-### Node (unit tests — `*.test.ts`)
-
-Use Node for anything that doesn't require browser APIs. These tests start
-instantly with zero setup overhead.
-
-Good candidates:
-
-- Composable logic (refs, computed, watchers) — e.g. `usePresentation.test.ts`
-- Pure functions and helpers — e.g. `useScrollSync.test.ts`
-- Data transformations, parsers, formatters
-
-Example (`useScrollSync.test.ts`):
+Use the `deck()` factory from `src/test-utils/deck-builder.ts` to compose test
+markdown instead of writing raw Slidev markdown by hand:
 
 ```ts
-import { describe, expect, it } from 'vite-plus/test'
-import { getScrollableHeight } from './useScrollSync'
+import { deck } from './test-utils/deck-builder'
 
-describe('useScrollSync helpers', () => {
-  it('calculates scrollable height', () => {
-    expect(getScrollableHeight({ clientHeight: 250, scrollHeight: 1000 })).toBe(750)
-  })
+const MY_DECK = deck()
+  .title('My test')
+  .fonts({ sans: 'Inter' })
+  .theme('#ff0000')
+  .slide('First slide', (s) => s.text('Hello world').click('Revealed on click'))
+  .slide('Code slide', (s) =>
+    s.code('const x = 1\nconst y = 2', {
+      lang: 'ts',
+      filename: 'example.ts',
+      highlights: '1-2',
+    }),
+  )
+  .build()
+```
+
+Available slide methods:
+
+- `.text(content)` — raw content (HTML, markdown)
+- `.click(content)` — wraps in `<div v-click>`
+- `.clickAfter(content)` — wraps in `<div v-after>`
+- `.clicks(items)` — `<ul v-clicks>` list
+- `.code(source, options?)` — fenced code block with optional filename,
+  highlights, line numbers
+- `.note(text)` — speaker note (`<!-- ... -->`)
+- `.layout(name)` — per-slide layout
+- `.import(src)` — import from external markdown
+- `.iframeUrl(url)` — iframe-right layout with URL
+- `.slideClass(name)` — per-slide CSS class
+
+For shared fixtures, add them to `src/test-utils/browser-test-fixtures.ts`.
+
+### 2. Use the AppPage page object
+
+Use `AppPage` from `src/test-utils/page-objects/app-page.ts` for all
+interactions. It provides a semantic API that matches user actions:
+
+```ts
+import { AppPage } from './test-utils/page-objects/app-page'
+
+it('Given a deck When presenting Then navigation works', async () => {
+  using app = await AppPage.render({ markdown: MY_DECK })
+
+  // Preview assertions
+  app.expectSlideCount(2)
+  app.expectSlideVisible('First slide')
+
+  // Enter presentation mode
+  const presentation = await app.present()
+  presentation.expectSlidePosition('1 / 2')
+
+  // Navigate
+  await presentation.next()
+  await presentation.pressKey('ArrowDown')
+
+  // Code block assertions (by index)
+  await app.waitForCodeBlocks()
+  const block = app.codeBlock(0)
+  block.expectLineCount(2)
+  block.expectHighlightedLines(['1', '2'])
+
+  // Style settings
+  const settings = await app.openStyleSettings()
+  await settings.setDarkMode()
+  app.expectDarkMode()
 })
 ```
 
-### Browser (browser tests — `*.browser.test.ts`)
+### 3. Write flat tests in Given / When / Then style
 
-Use the browser project for full-app user scenarios that need real DOM APIs,
-browser behavior, and actual component integration through `App.vue`.
-
-Good candidates:
-
-- App loads markdown from `window.location.hash`
-- Editing the real CodeMirror editor updates preview output
-- Presentation mode responds to buttons and keyboard shortcuts
-- Share flow uses `navigator.share` or clipboard fallback
-- Theme/frontmatter changes affect the rendered shell
-
-Example (`App.browser.test.ts`):
+Each `it(...)` is self-contained — all setup inside, cleanup via `using`.
+No `describe` blocks needed, the file name is the group:
 
 ```ts
-import { describe, expect, it } from 'vite-plus/test'
-import { renderApp, settleApp } from './test-utils/app-browser'
+// share-flow.browser.test.ts
 
-it('Given a shared hash When the app loads Then it renders the deck in preview', async () => {
-  using app = renderApp({ markdown: '# Intro\n\n---\n\n# Final' })
-  await settleApp()
-  await expect.element(app.screen.getByText('2 slides')).toBeVisible()
-  await expect.element(app.screen.getByText('Intro')).toBeVisible()
+it('Given native share is unavailable When the user shares Then the app falls back to clipboard', async () => {
+  using app = await AppPage.render({ markdown: MY_DECK })
+  await app.share()
+  expect(app.clipboardSpy).toHaveBeenCalled()
+})
+
+it('Given native share is available When the user shares Then the app uses the browser share API', async () => {
+  using app = await AppPage.render({ markdown: MY_DECK, nativeShare: true })
+  await app.share()
+  expect(app.shareSpy).toHaveBeenCalled()
 })
 ```
 
-### Writing Browser Scenarios
+### AppPage sub-objects
 
-Write browser tests in `Given / When / Then` style inside Vitest `it(...)`
-blocks. Keep them in TypeScript; do not add `.feature` files or a Gherkin
-runner unless there is a strong reason to change the toolchain.
-
-Prefer high-level helpers such as `renderApp()` and scenario actions over
-directly wiring component props.
-
-### Exception Cases
-
-Allow isolated browser tests only when mounting `App.vue` adds no value or the
-assertion would become unreasonable, for example:
-
-- Verifying a browser-only primitive in total isolation
-- Reproducing a very narrow DOM edge case
-- Debugging a third-party browser integration that is hard to exercise through
-  the full app
-
-If the behavior matters to users and can be reached through the app, prefer an
-`App.vue` scenario.
+- `app.presentation` — returned by `app.present()`. Navigation, shortcuts,
+  speaker notes, overview, goto dialog, click visibility assertions.
+- `app.styleSettings` — returned by `app.openStyleSettings()`. Dark mode,
+  primary color, canvas width, aspect ratio.
+- `app.codeBlock(index)` — query a specific code block by its DOM index.
+  Line counts, highlighted/dishonored line assertions.
 
 ## Naming Convention
 
-The file suffix determines which project runs the test:
-
-- `foo.test.ts` → runs in **Node** (unit project)
-- `foo.browser.test.ts` → runs in **browser** (browser project)
-
-When adding a new test file, pick the suffix based on whether you need browser
-APIs. Default to `.test.ts` (Node) unless the test genuinely requires a browser.
+All test files use the `*.browser.test.ts` suffix. This is the only test
+pattern recognized by the vitest config.
 
 ## Imports
 
 Always import test utilities from `vite-plus/test`, not directly from `vitest`:
 
 ```ts
-import { describe, expect, it } from 'vite-plus/test'
+import { expect, it } from 'vite-plus/test'
 ```
 
 ## Coverage
 
-V8 coverage is collected across both projects for all `src/**/*.ts` files,
-excluding test files and entry points (`env.d.ts`, `main.ts`).
+V8 coverage is collected for all `src/**/*.ts` and `src/**/*.vue` files,
+excluding test files and entry points (`*.d.ts`, `main.ts`).
 
 Run `vp test` to execute all tests. Coverage reports are written to `coverage/`.
+
+## Troubleshooting
+
+### Deck Builder Code Fence Spacing
+
+The Slidev parser is sensitive to spacing in code fence metadata. The deck
+builder produces this format:
+
+    ```ts [filename.ts] {lines:true,startLine:5}{2-3|4}
+
+Note:
+
+- Space between language and `[filename]`
+- Space between `[filename]` and `{options}`
+- **No space** between `{options}` and `{highlights}`
+
+If tests fail with "line not found" or code blocks don't render, check that the
+fence format matches what `@slidev/parser` expects.

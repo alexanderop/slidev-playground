@@ -1,6 +1,6 @@
 import { useEventListener, useWindowSize } from '@vueuse/core'
 import { ref } from 'vue'
-import { SPLIT_MAX_PERCENT, SPLIT_MIN_PERCENT } from '../constants'
+import { SPLIT_MAX_PERCENT, SPLIT_MIN_PERCENT } from '../config/constants'
 
 export function useSplitPane(onResize?: () => void) {
   const dragging = ref(false)

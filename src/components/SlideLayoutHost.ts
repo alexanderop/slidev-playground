@@ -88,35 +88,35 @@ export default defineComponent({
           ])
         case 'iframe':
           return h('section', { class: className }, [
-            iframeUrl.value !== null
-              ? h('iframe', {
+            iframeUrl.value === null
+              ? slots.default?.()
+              : h('iframe', {
                   class: 'slidev-layout-iframe-frame',
                   src: iframeUrl.value,
                   title: 'Embedded slide content',
-                })
-              : slots.default?.(),
+                }),
           ])
         case 'iframe-left':
           return h('section', { class: className }, [
-            iframeUrl.value !== null
-              ? h('iframe', {
+            iframeUrl.value === null
+              ? null
+              : h('iframe', {
                   class: 'slidev-layout-iframe-frame',
                   src: iframeUrl.value,
                   title: 'Embedded slide content',
-                })
-              : null,
+                }),
             h('div', { class: 'slidev-layout-iframe-content' }, [slots.default?.()]),
           ])
         case 'iframe-right':
           return h('section', { class: className }, [
             h('div', { class: 'slidev-layout-iframe-content' }, [slots.default?.()]),
-            iframeUrl.value !== null
-              ? h('iframe', {
+            iframeUrl.value === null
+              ? null
+              : h('iframe', {
                   class: 'slidev-layout-iframe-frame',
                   src: iframeUrl.value,
                   title: 'Embedded slide content',
-                })
-              : null,
+                }),
           ])
         default:
           return h('section', { class: className }, [slots.default?.()])

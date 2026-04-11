@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue'
 import { computed, provide } from 'vue'
-import { slideDimensionsKey } from '../injection-keys'
+import { slideDimensionsKey } from '../config/injection-keys'
 import type { SlidevConfig } from './useHeadmatter'
 
 const DEFAULT_WIDTH = 960

@@ -57,10 +57,23 @@ export default defineConfig({
   },
 
   lint: {
+    jsPlugins: ['./src/lint/feature-boundaries.js', './src/lint/no-else.js'],
     options: {
       typeAware: true,
       typeCheck: true,
     },
+    overrides: [
+      {
+        files: ['src/lint/**/*.js'],
+        rules: {
+          'typescript/no-unsafe-assignment': 'off',
+          'typescript/no-unsafe-member-access': 'off',
+          'typescript/no-unsafe-call': 'off',
+          'typescript/no-unsafe-return': 'off',
+          'typescript/no-unsafe-argument': 'off',
+        },
+      },
+    ],
     categories: {
       correctness: 'error',
       suspicious: 'warn',
@@ -133,6 +146,13 @@ export default defineConfig({
       'vue/no-multiple-slot-args': 'error',
       'vue/max-props': ['warn', { maxProps: 8 }],
 
+      // Feature boundaries (custom JS plugin)
+      'boundaries/no-cross-feature-import': 'error',
+      'boundaries/unidirectional-flow': 'error',
+
+      // Style (custom JS plugin)
+      'style/no-else': 'error',
+
       // Pedantic but useful — turn off noisy ones
       'max-lines-per-function': 'off',
       'max-lines': 'off',
@@ -143,6 +163,7 @@ export default defineConfig({
       'import/max-dependencies': 'off',
       'unicorn/prefer-top-level-await': 'off',
       'oxc/no-map-spread': 'off',
+      'no-ternary': 'off',
     },
   },
 
@@ -153,37 +174,19 @@ export default defineConfig({
   },
 
   test: {
-    projects: [
-      {
-        extends: true,
-        test: {
-          name: 'unit',
-          include: ['src/**/*.test.ts'],
-          exclude: ['src/**/*.browser.test.ts'],
-          environment: 'node',
-          globals: true,
-        },
-      },
-      {
-        extends: true,
-        test: {
-          name: 'browser',
-          include: ['src/**/*.browser.test.ts'],
-          globals: true,
-          browser: {
-            enabled: true,
-            provider: playwright(),
-            headless: true,
-            instances: [{ browser: 'chromium' }],
-          },
-        },
-      },
-    ],
+    include: ['src/**/*.browser.test.ts'],
+    globals: true,
+    browser: {
+      enabled: true,
+      provider: playwright(),
+      headless: true,
+      instances: [{ browser: 'chromium' }],
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/**/*.{ts,vue}'],
-      exclude: ['src/**/*.test.ts', 'src/**/*.browser.test.ts', 'src/**/*.d.ts', 'src/main.ts'],
+      exclude: ['src/**/*.browser.test.ts', 'src/**/*.d.ts', 'src/main.ts'],
     },
   },
 

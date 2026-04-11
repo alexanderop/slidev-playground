@@ -4,13 +4,19 @@
   box-sizing: border-box;
 }
 
+/* Shell variable aliases — mapped from OKLCH tokens in theme-tokens.css */
 :root {
-  --shell-bg: #f7f7f8;
-  --shell-bg-surface: rgba(255, 255, 255, 0.92);
-  --shell-border: rgba(24, 24, 27, 0.08);
-  --shell-text: #18181b;
-  --shell-text-dim: #71717a;
-  --shell-editor-bg: #ffffff;
+  --shell-bg: var(--surface-0);
+  --shell-bg-surface: var(--surface-1);
+  --shell-bg-elevated: var(--surface-2);
+  --shell-border: var(--border-subtle);
+  --shell-border-active: var(--border-active);
+  --shell-text: var(--text-primary);
+  --shell-text-dim: var(--text-secondary);
+  --shell-editor-bg: var(--surface-2);
+  --shell-preview-bg: var(--surface-0);
+  --shell-slide-shadow: var(--shadow-card);
+  --shell-slide-shadow-hover: var(--shadow-card-hover);
 }
 
 html,
@@ -27,15 +33,9 @@ body {
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-}
-
-html.dark {
-  --shell-bg: #09090b;
-  --shell-bg-surface: rgba(24, 24, 27, 0.92);
-  --shell-border: rgba(255, 255, 255, 0.08);
-  --shell-text: #f4f4f5;
-  --shell-text-dim: #a1a1aa;
-  --shell-editor-bg: #111827;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 #app {

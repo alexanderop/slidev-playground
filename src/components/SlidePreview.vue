@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RenderedSlide } from '../types'
 import { computed, inject } from 'vue'
-import { slideDimensionsKey } from '../injection-keys'
+import { slideDimensionsKey } from '../config/injection-keys'
 import SlideSurface from './SlideSurface.vue'
 
 defineProps<{
@@ -55,36 +55,50 @@ const aspectRatio = computed(
 }
 
 .preview-slide-wrapper:hover .preview-slide {
-  box-shadow: 0 0 0 2px var(--slidev-theme-primary);
+  box-shadow: var(--shell-slide-shadow-hover);
+}
+
+.preview-slide-wrapper:hover .slide-number {
+  color: var(--shell-text);
 }
 
 .preview-slide-wrapper:focus-visible {
-  outline: 2px solid var(--slidev-theme-primary);
-  outline-offset: 4px;
+  outline: none;
+}
+
+.preview-slide-wrapper:focus-visible .preview-slide {
+  box-shadow: var(--shell-slide-shadow-hover);
 }
 
 .slide-number {
   position: absolute;
   top: 8px;
   left: -28px;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   color: var(--shell-text-dim);
   width: 24px;
   text-align: right;
+  transition: color 0.15s;
 }
 
 .preview-slide {
   width: 100%;
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
-  transition: box-shadow 0.15s;
+  box-shadow: var(--shell-slide-shadow);
+  transition: box-shadow 0.2s ease;
+  border: 1px solid var(--shell-border);
 }
 
 .preview-note-indicator {
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 500;
   color: var(--shell-text-dim);
-  padding: 2px 8px;
+  padding: 4px 4px 0;
   opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 </style>

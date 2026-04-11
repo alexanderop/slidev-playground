@@ -1,0 +1,63 @@
+/*
+ * Design Token Layer — OKLCH-based generative theme
+ *
+ * Inspired by Linear's 2024 UI redesign: the entire theme derives from
+ * 3 inputs (base hue, accent color, contrast level). All shell variables
+ * are aliased from these tokens for backward compatibility.
+ *
+ * Color space: OKLCH (perceptually uniform)
+ * Lightness: 0 = black, 1 = white
+ * Chroma: 0 = gray, higher = more saturated
+ * Hue: 0-360 degrees
+ */
+
+/* ─── Generative Inputs ───────────────────────────────────────────── */
+:root {
+  --theme-base-hue: 270;
+  --theme-accent: oklch(0.72 0.17 160);
+  --theme-contrast: 72;
+}
+
+/* ─── Light Mode Surfaces ─────────────────────────────────────────── */
+:root {
+  --surface-0: oklch(0.967 0.004 270); /* app background */
+  --surface-1: oklch(0.985 0.002 270); /* panels, headers */
+  --surface-2: oklch(1 0 0); /* elevated: editors, cards */
+  --surface-code: oklch(0.965 0.004 270); /* code block background */
+
+  /* ─── Text (contrast-driven: higher contrast = darker text) ────── */
+  --text-primary: oklch(calc(1 - var(--theme-contrast) / 100) 0.01 270);
+  --text-secondary: oklch(calc(1 - var(--theme-contrast) / 100 + 0.3) 0.01 270);
+
+  /* ─── Borders ───────────────────────────────────────────────────── */
+  --border-subtle: oklch(0.15 0.005 270 / 0.09);
+  --border-active: oklch(0.15 0.005 270 / 0.22);
+
+  /* ─── Accent Tints ─────────────────────────────────────────────── */
+  --accent-subtle: color-mix(in oklch, var(--theme-accent) 10%, transparent);
+  --accent-muted: color-mix(in oklch, var(--theme-accent) 18%, transparent);
+
+  /* ─── Shadows ───────────────────────────────────────────────────── */
+  --shadow-card: 0 1px 3px oklch(0 0 0 / 0.05), 0 4px 16px oklch(0 0 0 / 0.04);
+  --shadow-card-hover: 0 0 0 2px var(--theme-accent);
+  --shadow-dropdown: 0 4px 12px oklch(0 0 0 / 0.08), 0 1px 3px oklch(0 0 0 / 0.04);
+  --shadow-panel: 0 8px 32px oklch(0 0 0 / 0.1);
+}
+
+/* ─── Dark Mode Surfaces ──────────────────────────────────────────── */
+html.dark {
+  --surface-0: oklch(0.145 0.005 270);
+  --surface-1: oklch(0.175 0.005 270);
+  --surface-2: oklch(0.21 0.005 270);
+  --surface-code: oklch(0.175 0.005 270);
+
+  --text-primary: oklch(calc(var(--theme-contrast) / 100) 0.005 270);
+  --text-secondary: oklch(calc(var(--theme-contrast) / 100 - 0.25) 0.008 270);
+
+  --border-subtle: oklch(0.95 0.005 270 / 0.08);
+  --border-active: oklch(0.95 0.005 270 / 0.22);
+
+  --shadow-card: 0 2px 8px oklch(0 0 0 / 0.22), 0 8px 24px oklch(0 0 0 / 0.16);
+  --shadow-dropdown: 0 4px 16px oklch(0 0 0 / 0.3), 0 1px 4px oklch(0 0 0 / 0.15);
+  --shadow-panel: 0 8px 32px oklch(0 0 0 / 0.35);
+}
