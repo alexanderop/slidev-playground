@@ -46,6 +46,22 @@ class SlideBuilder {
     return this
   }
 
+  mark(content: string, options: { type?: string; color?: string; at?: number } = {}): this {
+    const attrs: string[] = []
+    if (options.type !== undefined && options.type !== '') {
+      attrs.push(`type="${options.type}"`)
+    }
+    if (options.color !== undefined && options.color !== '') {
+      attrs.push(`color="${options.color}"`)
+    }
+    if (options.at !== undefined) {
+      attrs.push(`at="${options.at}"`)
+    }
+    const attrStr = attrs.length > 0 ? ` ${attrs.join(' ')}` : ''
+    this.lines.push(`<v-mark${attrStr}>${content}</v-mark>`)
+    return this
+  }
+
   clicks(items: string[]): this {
     this.lines.push('<ul v-clicks>')
     for (const item of items) {

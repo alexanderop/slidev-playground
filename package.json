@@ -25,6 +25,7 @@
     "@shikijs/engine-javascript": "^4.0.2",
     "@shikijs/markdown-it": "^4.0.2",
     "@slidev/parser": "^52.14.2",
+    "@slidev/rough-notation": "^0.1.0",
     "@traptitech/markdown-it-katex": "^3.6.0",
     "@vueuse/core": "^14.2.1",
     "codemirror": "^6.0.2",

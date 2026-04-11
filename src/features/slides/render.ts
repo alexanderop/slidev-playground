@@ -6,6 +6,7 @@ import SlidevAutoFitText from './components/SlidevAutoFitText.vue'
 import SlidevCodeBlock from './components/SlidevCodeBlock.vue'
 import SlidevErrorBlock from './components/SlidevErrorBlock.vue'
 import SlidevIcon from './components/SlidevIcon.vue'
+import SlidevMark from './components/SlidevMark.vue'
 import SlidevKatexBlock from './components/SlidevKatexBlock.vue'
 import SlidevMagicMove from './components/SlidevMagicMove.vue'
 import SlidevMermaidBlock from './components/SlidevMermaidBlock.vue'
@@ -151,6 +152,7 @@ function compileSlideTemplate(
           autofittext: SlidevAutoFitText,
           Youtube: SlidevYoutube,
           PoweredBySlidev: SlidevPoweredBy,
+          VMark: SlidevMark,
           ...customComponents,
         },
         setup() {

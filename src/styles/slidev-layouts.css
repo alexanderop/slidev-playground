@@ -272,6 +272,11 @@
   height: 100%;
 }
 
+.slidev-mark {
+  position: relative;
+  display: inline;
+}
+
 .slidev-plantuml-block {
   display: flex;
   justify-content: center;
