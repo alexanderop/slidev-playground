@@ -4,6 +4,7 @@ import { compile, defineComponent, inject, markRaw } from 'vue'
 import SlidevArrow from './components/SlidevArrow.vue'
 import SlidevAutoFitText from './components/SlidevAutoFitText.vue'
 import SlidevCodeBlock from './components/SlidevCodeBlock.vue'
+import SlidevCodeGroup from './components/SlidevCodeGroup.vue'
 import SlidevErrorBlock from './components/SlidevErrorBlock.vue'
 import SlidevIcon from './components/SlidevIcon.vue'
 import SlidevMark from './components/SlidevMark.vue'
@@ -150,6 +151,8 @@ function compileSlideTemplate(
           Arrow: SlidevArrow,
           AutoFitText: SlidevAutoFitText,
           autofittext: SlidevAutoFitText,
+          CodeGroup: SlidevCodeGroup,
+          codegroup: SlidevCodeGroup,
           Youtube: SlidevYoutube,
           PoweredBySlidev: SlidevPoweredBy,
           VMark: SlidevMark,
@@ -205,6 +208,12 @@ function renderMarkdown(content: string, options: RenderMarkdownOptions): Render
   const { content: preprocessed, magicMoveClicks } = preprocessMagicMove(content)
   codeClicks = Math.max(codeClicks, magicMoveClicks)
 
+  const { content: withCodeGroups, codeClicks: codeGroupClicks } = preprocessCodeGroups(
+    preprocessed,
+    options,
+  )
+  codeClicks = Math.max(codeClicks, codeGroupClicks)
+
   md.renderer.rules.fence = (tokens, idx) => {
     const token = tokens[idx]
     const { codeClicks: fenceCodeClicks, html } = renderFence(token.info, token.content, options)
@@ -212,7 +221,7 @@ function renderMarkdown(content: string, options: RenderMarkdownOptions): Render
     return html
   }
 
-  const withIcons = transformIconTags(preprocessed)
+  const withIcons = transformIconTags(withCodeGroups)
   const rendered = md.render(withIcons)
   delete md.renderer.rules.fence
 
@@ -326,6 +335,32 @@ function preprocessMagicMove(content: string): { content: string; magicMoveClick
   })
 
   return { content: result, magicMoveClicks }
+}
+
+function preprocessCodeGroups(
+  content: string,
+  options: RenderMarkdownOptions,
+): { content: string; codeClicks: number } {
+  let codeClicks = 0
+  const codeGroupRegex = /<CodeGroup>\s*([\s\S]*?)\s*<\/CodeGroup>/gi
+
+  const result = content.replaceAll(codeGroupRegex, (_match, inner: string) => {
+    const codeBlockRegex = /```([^\n]*)\n([\s\S]*?)```/g
+    const blocks: string[] = []
+    let blockMatch: RegExpExecArray | null
+
+    while ((blockMatch = codeBlockRegex.exec(inner)) !== null) {
+      const fenceInfo = blockMatch[1]
+      const code = blockMatch[2].replace(/\n$/, '')
+      const { codeClicks: blockClicks, html } = renderFence(fenceInfo, code, options)
+      codeClicks = Math.max(codeClicks, blockClicks)
+      blocks.push(html)
+    }
+
+    return `<div>\n<codegroup>${blocks.join('\n')}</codegroup>\n</div>`
+  })
+
+  return { content: result, codeClicks }
 }
 
 function transformIconTags(html: string): string {
