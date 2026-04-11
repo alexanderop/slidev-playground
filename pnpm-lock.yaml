@@ -39,6 +39,9 @@ importers:
       '@slidev/parser':
         specifier: ^52.14.2
         version: 52.14.2(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@voidzero-dev/vite-plus-core@0.1.16(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.3))(@vue/compiler-sfc@3.5.32)(typescript@5.9.3)
+      '@slidev/rough-notation':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@traptitech/markdown-it-katex':
         specifier: ^3.6.0
         version: 3.6.0
@@ -1024,6 +1027,9 @@ packages:
   '@slidev/parser@52.14.2':
     resolution: {integrity: sha512-HxKhO6ULub45A4nSkDIcnlfnNkARCJfmVKnpvoSn4R/QG9wRa29cGiOOR6PUT9atDZF+LEqisoUTLqiZp0NH0Q==}
     engines: {node: '>=20.12.0'}
+
+  '@slidev/rough-notation@0.1.0':
+    resolution: {integrity: sha512-a/CbVmjuoO3E4JbUr2HOTsXndbcrdLWOM+ajbSQIY3gmLFzhjeXHGksGcp1NZ08pJjLZyTCxfz1C7v/ltJqycA==}
 
   '@slidev/types@52.14.2':
     resolution: {integrity: sha512-ucQbadhsg6IjidEmZevNGBxLlW6i2JS8YkIRwpFDKRMg7oJdi6mztp2Zq/Ca4hFdVr3iBo1Atny6ov0qUKE22A==}
@@ -4289,6 +4295,10 @@ snapshots:
       - svelte
       - typescript
       - vite
+
+  '@slidev/rough-notation@0.1.0':
+    dependencies:
+      roughjs: 4.6.6
 
   '@slidev/types@52.14.2(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@voidzero-dev/vite-plus-core@0.1.16(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.3))(@vue/compiler-sfc@3.5.32)(typescript@5.9.3)':
     dependencies:

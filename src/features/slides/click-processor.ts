@@ -56,6 +56,10 @@ function processNode(
       normalizedChild.removeAttribute('v-after')
     }
 
+    if (isMarkElement(normalizedChild)) {
+      countMarkClick(normalizedChild, state)
+    }
+
     processNode(normalizedChild, state)
   }
 }
@@ -122,6 +126,27 @@ function isAfterElement(element: HTMLElement) {
 
 function isClicksContainer(element: HTMLElement) {
   return element.tagName.toLowerCase() === 'v-clicks' || element.hasAttribute('v-clicks')
+}
+
+function isMarkElement(element: HTMLElement) {
+  return element.tagName.toLowerCase() === 'v-mark'
+}
+
+function countMarkClick(
+  element: HTMLElement,
+  state: {
+    clickIndex: number
+    lastAssignedClick: number
+  },
+) {
+  const atValue = element.getAttribute('at')
+  if (atValue === null) {
+    return
+  }
+  const click = parseInt(atValue, 10)
+  if (!Number.isNaN(click)) {
+    state.clickIndex = Math.max(state.clickIndex, click)
+  }
 }
 
 function normalizeCustomTag(element: HTMLElement) {
