@@ -132,6 +132,17 @@ The rendering pipeline order is:
 - `plantuml-encoder` (1.4.0)
 - `shiki-magic-move` (1.3.0)
 
+#### AutoFitText Component
+
+- `src/features/slides/components/SlidevAutoFitText.vue` -- auto-resizes text
+  to fit its container, like PowerPoint's auto-shrink text box. Uses
+  `useElementSize` from `@vueuse/core` to observe container and content widths,
+  dynamically computes font size clamped between `min` (default 30) and `max`
+  (default 100) props. Enables text wrapping when content is too wide at minimum
+  size.
+- Registered as `AutoFitText` in `compileSlideTemplate()`.
+- Usage: `<AutoFitText :max="80" :min="20">Long text here</AutoFitText>`
+
 ## What To Do Next
 
 - Verify each feature visually in the browser (dev server on port 5173)
