@@ -181,6 +181,16 @@ export function usePresentation(getSlides: () => SlideInfo[], options: Presentat
         return
       }
 
+      if (lower === 'p') {
+        event.preventDefault()
+        if (presenting.value) {
+          stop()
+          return
+        }
+        start(0)
+        return
+      }
+
       if (lower === 'f') {
         if (!presenting.value) {
           return

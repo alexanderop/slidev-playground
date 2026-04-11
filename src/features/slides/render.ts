@@ -16,8 +16,9 @@ import type { SlidevConfig } from '../../composables/useHeadmatter'
 import { slidevNavKey } from '../../config/injection-keys'
 import { escapeHtml, escapeHtmlAttribute } from '../../utils/string-utils'
 import { extractStyles, scopeCSS } from './style-extractor'
-import type { RenderedSlide, SlideSlotMap } from '../../types'
+import type { RenderedSlide, SlideFrontmatter, SlideSlotMap } from '../../types'
 import { parseFenceInfo } from './fences'
+import { SlideFrontmatterSchema } from './frontmatter-schema'
 import type { ResolvedSlideSource } from './imports'
 import type { KatexPluginResult } from './katex-plugin'
 import { katexPlugin } from './katex-plugin'
@@ -73,6 +74,8 @@ function renderSlide(
   customComponents?: Record<string, Component>,
 ): RenderedSlide {
   const frontmatter = mergeFrontmatter(rootDefaults, slide.frontmatter)
+  const parseResult = SlideFrontmatterSchema.safeParse(frontmatter)
+  const fm: SlideFrontmatter = parseResult.success ? parseResult.data : {}
   const slots = splitSlideSlots(slide.content)
   const slotComponents: SlideSlotMap = {}
 
@@ -83,7 +86,7 @@ function renderSlide(
   for (const slot of slots) {
     const { content: cleanedContent, styles } = extractStyles(slot.content)
     const rendered = renderMarkdown(cleanedContent, {
-      lineNumbers: Boolean(frontmatter.lineNumbers ?? config.lineNumbers),
+      lineNumbers: Boolean(fm.lineNumbers ?? config.lineNumbers),
     })
     const { html: clickableHtml, totalClicks } = processClicks(rendered.html)
 
@@ -97,23 +100,20 @@ function renderSlide(
     slotComponents[slot.name] = compileSlideTemplate(clickableHtml, customComponents)
   }
 
-  const background = getString(frontmatter.background)
-  const backgroundImage = getString(frontmatter.backgroundImage)
-  const image = getString(frontmatter.image)
-
   return {
-    layout: resolveLayout(frontmatter.layout, index),
-    transition: getString(frontmatter.transition),
+    layout: resolveLayout(fm.layout, index),
+    transition: fm.transition,
     note: slide.note ?? '',
-    background,
-    backgroundImage,
-    image,
-    class: normalizeClassName(frontmatter.class),
+    background: fm.background,
+    backgroundImage: fm.backgroundImage,
+    image: fm.image,
+    class: normalizeClassName(fm.class),
     scopeId: `slidev-scope-${index}`,
     scopedStyles: scopedStyles.trim() || undefined,
     totalClicks: Math.max(clickOffset, codeClicks),
     filepath: slide.filepath,
     frontmatter,
+    parsedFrontmatter: fm,
     slotComponents,
   }
 }
@@ -278,25 +278,21 @@ function mergeFrontmatter(
   }
 }
 
-function resolveLayout(layout: unknown, index: number): string {
-  if (typeof layout === 'string' && layout !== '') {
+function resolveLayout(layout: string | undefined, index: number): string {
+  if (layout !== undefined && layout !== '') {
     return layout
   }
   return index === 0 ? 'cover' : 'default'
 }
 
-function normalizeClassName(value: unknown): string | undefined {
+function normalizeClassName(value: string | string[] | undefined): string | undefined {
   if (typeof value === 'string') {
     return value
   }
   if (Array.isArray(value)) {
-    return value.filter((entry) => typeof entry === 'string').join(' ') || undefined
+    return value.join(' ') || undefined
   }
   return undefined
-}
-
-function getString(value: unknown): string | undefined {
-  return typeof value === 'string' && value !== '' ? value : undefined
 }
 
 function preprocessMagicMove(content: string): { content: string; magicMoveClicks: number } {

@@ -2,7 +2,13 @@ import type { Ref } from 'vue'
 import { useClipboard, useDebounceFn, useShare } from '@vueuse/core'
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
 import { watch } from 'vue'
+import { z } from 'zod/mini'
 import { DEBOUNCE_URL_MS } from '../config/constants'
+
+const UrlStateSchema = z.object({
+  m: z.string(),
+  c: z.optional(z.record(z.string(), z.string())),
+})
 
 export interface PlaygroundState {
   markdown: string
@@ -74,12 +80,9 @@ function decodeState(raw: string, defaultContent: string): PlaygroundState {
   // New format: JSON with { m, c } keys
   if (raw.startsWith('{')) {
     try {
-      const parsed: unknown = JSON.parse(raw)
-      if (typeof parsed === 'object' && parsed !== null) {
-        const obj = parsed as Record<string, unknown>
-        const markdown = typeof obj.m === 'string' ? obj.m : defaultContent
-        const componentFiles = isRecordOfStrings(obj.c) ? obj.c : {}
-        return { markdown, componentFiles }
+      const result = UrlStateSchema.safeParse(JSON.parse(raw))
+      if (result.success) {
+        return { markdown: result.data.m, componentFiles: result.data.c ?? {} }
       }
       return { markdown: defaultContent, componentFiles: {} }
     } catch {
@@ -88,11 +91,4 @@ function decodeState(raw: string, defaultContent: string): PlaygroundState {
   }
   // Legacy format: plain markdown string
   return { markdown: raw, componentFiles: {} }
-}
-
-function isRecordOfStrings(value: unknown): value is Record<string, string> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return false
-  }
-  return Object.values(value as Record<string, unknown>).every((v) => typeof v === 'string')
 }

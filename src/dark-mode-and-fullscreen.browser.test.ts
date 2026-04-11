@@ -49,6 +49,24 @@ it('Given a deck with explicit dark colorSchema When the user presses d Then run
   app.expectDarkMode()
 })
 
+it('Given the editor When p is pressed Then presentation mode starts', async () => {
+  using app = await AppPage.render({ markdown: TWO_SLIDE_DECK })
+
+  await app.pressShortcut('p')
+
+  app.presentation.expectOpen()
+})
+
+it('Given presentation mode When p is pressed Then presentation mode stops', async () => {
+  using app = await AppPage.render({ markdown: TWO_SLIDE_DECK })
+
+  const presentation = await app.present()
+
+  await presentation.pressKey('p')
+
+  expect(app.container.querySelector('[aria-label="Presentation mode"]')).toBeNull()
+})
+
 it('Given the editor is focused When shortcut keys are pressed Then the editor keeps control', async () => {
   using app = await AppPage.render({ markdown: TWO_SLIDE_DECK })
 

@@ -4,3 +4,4 @@ coverage
 .vite-hooks
 .vitest-attachments
 *.local
+src/__screenshots__/
