@@ -205,3 +205,41 @@ Note:
 
 If tests fail with "line not found" or code blocks don't render, check that the
 fence format matches what `@slidev/parser` expects.
+
+### Role Query Strict Mode
+
+When a button contains a nested element with `role="button"` (e.g., a close
+icon `<span role="button">`), `getByRole('button', { name: '...' })` matches
+both elements, causing a strict mode violation. Use `exact: true`:
+
+```ts
+// Fails: matches both parent button and nested span
+await app.screen.getByRole('button', { name: 'Remove Comp1.vue' }).click()
+
+// Works: matches only the span with exact aria-label
+await app.screen.getByRole('button', { name: 'Remove Comp1.vue', exact: true }).click()
+```
+
+### Dialog Closed Assertions
+
+`getByRole` throws when no element matches. To assert a dialog has closed, use
+`querySelector` with `toBeNull()`:
+
+```ts
+expect(app.container.querySelector('[aria-label="Goto slide"]')).toBeNull()
+```
+
+When the closed dialog lives inside a larger overlay (e.g., the goto dialog
+inside presentation mode), only assert the specific dialog is gone — the
+surrounding overlay may still be mounted.
+
+### Drag Behavior via Mouse Events
+
+Split-pane and resize handles use global window listeners. Dispatch `mousedown`
+on the element, then `mousemove` and `mouseup` on `window`:
+
+```ts
+divider.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 200 }))
+window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
+```
