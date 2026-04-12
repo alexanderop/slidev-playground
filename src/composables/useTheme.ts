@@ -6,7 +6,7 @@ type Mode = 'light' | 'dark'
 
 let initialized = false
 
-export interface ThemeOptions {
+export type ThemeOptions = {
   frontmatterPrimary?: Ref<string | undefined>
   frontmatterColorSchema?: Ref<string | undefined>
   themeConfig?: Ref<Record<string, unknown> | undefined>
@@ -39,7 +39,7 @@ export function useTheme(options: ThemeOptions = {}) {
   if (!initialized && typeof document !== 'undefined') {
     initialized = true
 
-    let previousThemeKeys: string[] = []
+    let previousThemeKeys: readonly string[] = []
 
     watchEffect(() => {
       const root = document.documentElement

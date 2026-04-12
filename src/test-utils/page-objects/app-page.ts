@@ -5,7 +5,7 @@ import { MeasurementHelper } from './measurement-helper'
 import { ShareAssertions } from './share-assertions'
 import { ThemeAssertions } from './theme-assertions'
 
-async function waitForSelector(container: Element, selector: string, timeoutMs = 2000) {
+export async function waitForSelector(container: Element, selector: string, timeoutMs = 2000) {
   const start = Date.now()
   while (Date.now() - start < timeoutMs) {
     const element = container.querySelector(selector)
@@ -18,7 +18,7 @@ async function waitForSelector(container: Element, selector: string, timeoutMs =
   throw new Error(`Timed out waiting for selector: ${selector}`)
 }
 
-interface AppPageOptions {
+type AppPageOptions = {
   previewWidth?: number
 }
 

@@ -7,19 +7,27 @@ import SlidevCodeBlock from './components/SlidevCodeBlock.vue'
 import SlidevCodeGroup from './components/SlidevCodeGroup.vue'
 import SlidevErrorBlock from './components/SlidevErrorBlock.vue'
 import SlidevIcon from './components/SlidevIcon.vue'
-import SlidevMark from './components/SlidevMark.vue'
 import SlidevKatexBlock from './components/SlidevKatexBlock.vue'
+import SlidevLightOrDark from './components/SlidevLightOrDark.vue'
+import SlidevLink from './components/SlidevLink.vue'
+import SlidevMark from './components/SlidevMark.vue'
 import SlidevMagicMove from './components/SlidevMagicMove.vue'
 import SlidevMermaidBlock from './components/SlidevMermaidBlock.vue'
 import SlidevPlantUmlBlock from './components/SlidevPlantUmlBlock.vue'
 import SlidevPoweredBy from './components/SlidevPoweredBy.vue'
+import SlidevSlideCurrentNo from './components/SlidevSlideCurrentNo.vue'
+import SlidevSlidesTotal from './components/SlidevSlidesTotal.vue'
+import SlidevTransform from './components/SlidevTransform.vue'
+import SlidevVideo from './components/SlidevVideo.vue'
 import SlidevYoutube from './components/SlidevYoutube.vue'
 import { processClicks } from './click-processor'
 import type { SlidevConfig } from '../../composables/useHeadmatter'
-import { slidevNavKey } from '../../config/injection-keys'
+import { defaultSlidevNav, slidevNavKey } from '../../config/injection-keys'
 import { escapeHtml, escapeHtmlAttribute } from '../../utils/string-utils'
 import { extractStyles, scopeCSS } from './style-extractor'
 import type { RenderedSlide, SlideFrontmatter, SlideSlotMap } from '../../types'
+import { asScopeId, asSlideFilepath, asSlotName } from '../../types/brand'
+import type { ScopeId, SlotName } from '../../types/brand'
 import { parseFenceInfo } from './fences'
 import { SlideFrontmatterSchema } from './frontmatter-schema'
 import type { ResolvedSlideSource } from './imports'
@@ -27,13 +35,13 @@ import type { KatexPluginResult } from './katex-plugin'
 import { katexPlugin } from './katex-plugin'
 import { splitSlideSlots } from './slots'
 
-interface RenderMarkdownOptions {
-  lineNumbers: boolean
+type RenderMarkdownOptions = {
+  readonly lineNumbers: boolean
 }
 
-interface RenderMarkdownResult {
-  codeClicks: number
-  html: string
+type RenderMarkdownResult = {
+  readonly codeClicks: number
+  readonly html: string
 }
 
 const compiledComponentCache = new Map<string, Component>()
@@ -54,15 +62,30 @@ md.renderer.rules.heading_open = (tokens, idx, options, _env, self) => {
   return self.renderToken(tokens, idx, options)
 }
 
+type FenceRenderEnv = {
+  renderFence?: (info: string, content: string) => { codeClicks: number; html: string }
+  codeClicks?: number
+}
+
+md.renderer.rules.fence = (tokens, idx, _options, env: FenceRenderEnv) => {
+  const token = tokens[idx]
+  if (!env.renderFence) {
+    return `<pre><code>${escapeHtml(token.content.replace(/\n$/, ''))}</code></pre>`
+  }
+  const { codeClicks: fenceCodeClicks, html } = env.renderFence(token.info, token.content)
+  env.codeClicks = Math.max(env.codeClicks ?? 0, fenceCodeClicks)
+  return html
+}
+
 export function clearComponentCache() {
   compiledComponentCache.clear()
 }
 
 export function renderSlides(
-  slides: ResolvedSlideSource[],
+  slides: readonly ResolvedSlideSource[],
   config: SlidevConfig,
-  rootDefaults: Record<string, unknown>,
-  customComponents?: Record<string, Component>,
+  rootDefaults: Readonly<Record<string, unknown>>,
+  customComponents?: Readonly<Record<string, Component>>,
 ): RenderedSlide[] {
   return slides.map((slide, index) =>
     renderSlide(slide, index, config, rootDefaults, customComponents),
@@ -73,18 +96,19 @@ function renderSlide(
   slide: ResolvedSlideSource,
   index: number,
   config: SlidevConfig,
-  rootDefaults: Record<string, unknown>,
-  customComponents?: Record<string, Component>,
+  rootDefaults: Readonly<Record<string, unknown>>,
+  customComponents?: Readonly<Record<string, Component>>,
 ): RenderedSlide {
   const frontmatter = mergeFrontmatter(rootDefaults, slide.frontmatter)
   const parseResult = SlideFrontmatterSchema.safeParse(frontmatter)
   const fm: SlideFrontmatter = parseResult.success ? parseResult.data : {}
   const slots = splitSlideSlots(slide.content)
-  const slotComponents: SlideSlotMap = {}
+  const slotComponents: Record<SlotName, Component | undefined> = {}
 
   let clickOffset = 0
   let codeClicks = 0
   let scopedStyles = ''
+  const scopeId: ScopeId = asScopeId(`slidev-scope-${index}`)
 
   for (const slot of slots) {
     const { content: cleanedContent, styles } = extractStyles(slot.content)
@@ -96,11 +120,10 @@ function renderSlide(
     clickOffset = Math.max(clickOffset, totalClicks)
     codeClicks = Math.max(codeClicks, rendered.codeClicks)
     if (styles.length > 0) {
-      const scopeId = `slidev-scope-${index}`
       scopedStyles += `${styles.map((css) => scopeCSS(css, scopeId)).join('\n')}\n`
     }
 
-    slotComponents[slot.name] = compileSlideTemplate(clickableHtml, customComponents)
+    slotComponents[asSlotName(slot.name)] = compileSlideTemplate(clickableHtml, customComponents)
   }
 
   return {
@@ -111,22 +134,19 @@ function renderSlide(
     backgroundImage: fm.backgroundImage,
     image: fm.image,
     class: normalizeClassName(fm.class),
-    scopeId: `slidev-scope-${index}`,
+    scopeId,
     scopedStyles: scopedStyles.trim() || undefined,
     totalClicks: Math.max(clickOffset, codeClicks),
-    filepath: slide.filepath,
-    frontmatter,
+    filepath: asSlideFilepath(slide.filepath),
     parsedFrontmatter: fm,
-    slotComponents,
+    slotComponents: slotComponents as SlideSlotMap,
   }
 }
 
 function compileSlideTemplate(
   html: string,
-  customComponents?: Record<string, Component>,
+  customComponents?: Readonly<Record<string, Component>>,
 ): Component {
-  // Vue reserves $ and _ prefixes for setup() return values.
-  // Rewrite $slidev.nav references so we can expose them as plain `nav`.
   const rewrittenHtml = html.replaceAll('$slidev.nav', 'nav')
   const template = `<div class="slidev-markdown">${rewrittenHtml}</div>`
 
@@ -156,16 +176,22 @@ function compileSlideTemplate(
           Youtube: SlidevYoutube,
           PoweredBySlidev: SlidevPoweredBy,
           VMark: SlidevMark,
+          SlideCurrentNo: SlidevSlideCurrentNo,
+          slidecurrentno: SlidevSlideCurrentNo,
+          SlidesTotal: SlidevSlidesTotal,
+          slidestotal: SlidevSlidesTotal,
+          Transform: SlidevTransform,
+          transform: SlidevTransform,
+          LightOrDark: SlidevLightOrDark,
+          lightordark: SlidevLightOrDark,
+          SlidevVideo,
+          slidevvideo: SlidevVideo,
+          SlidevLink,
+          slidevlink: SlidevLink,
           ...customComponents,
         },
         setup() {
-          const nav = inject(slidevNavKey, {
-            next: () => {},
-            prev: () => {},
-            nextSlide: () => {},
-            prevSlide: () => {},
-            goToSlide: () => {},
-          })
+          const nav = inject(slidevNavKey, defaultSlidevNav)
           return {
             nav: {
               next: nav.next,
@@ -214,17 +240,13 @@ function renderMarkdown(content: string, options: RenderMarkdownOptions): Render
   )
   codeClicks = Math.max(codeClicks, codeGroupClicks)
 
-  md.renderer.rules.fence = (tokens, idx) => {
-    const token = tokens[idx]
-    const { codeClicks: fenceCodeClicks, html } = renderFence(token.info, token.content, options)
-    codeClicks = Math.max(codeClicks, fenceCodeClicks)
-    return html
-  }
-
   const withIcons = transformIconTags(withCodeGroups)
-  const rendered = md.render(withIcons)
-  delete md.renderer.rules.fence
-
+  const env: FenceRenderEnv = {
+    renderFence: (info, fenceContent) => renderFence(info, fenceContent, options),
+    codeClicks: 0,
+  }
+  const rendered = md.render(withIcons, env)
+  codeClicks = Math.max(codeClicks, env.codeClicks ?? 0)
   codeClicks = Math.max(codeClicks, katexResult.mathClicks)
 
   return {
@@ -283,8 +305,8 @@ function renderFence(
 }
 
 function mergeFrontmatter(
-  defaults: Record<string, unknown>,
-  frontmatter: Record<string, unknown>,
+  defaults: Readonly<Record<string, unknown>>,
+  frontmatter: Readonly<Record<string, unknown>>,
 ): Record<string, unknown> {
   return {
     ...defaults,
@@ -299,7 +321,7 @@ function resolveLayout(layout: string | undefined, index: number): string {
   return index === 0 ? 'cover' : 'default'
 }
 
-function normalizeClassName(value: string | string[] | undefined): string | undefined {
+function normalizeClassName(value: string | readonly string[] | undefined): string | undefined {
   if (typeof value === 'string') {
     return value
   }

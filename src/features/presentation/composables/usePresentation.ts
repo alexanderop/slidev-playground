@@ -1,14 +1,33 @@
+import type { ComputedRef, Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
-export interface SlideInfo {
-  transition?: string
-  totalClicks?: number
+export type SlideInfo = {
+  readonly transition?: string
+  readonly totalClicks?: number
 }
 
-interface PresentationOptions {
+type PresentationOptions = {
   toggleDark?: () => void
-  toggleFullscreen?: () => void | Promise<void>
+  toggleFullscreen?: () => Promise<void>
+}
+
+export type UsePresentationApi = {
+  readonly presenting: Ref<boolean>
+  readonly currentSlide: Ref<number>
+  readonly currentClick: Ref<number>
+  readonly navDirection: Ref<'forward' | 'backward'>
+  readonly transitionName: ComputedRef<string>
+  readonly showNotes: Ref<boolean>
+  readonly showOverview: Ref<boolean>
+  readonly showGotoDialog: Ref<boolean>
+  start: (slideIndex?: number) => void
+  stop: () => void
+  next: () => void
+  prev: () => void
+  nextSlide: () => void
+  prevSlide: (lastClicks?: boolean) => void
+  goToSlide: (index: number) => void
 }
 
 function isShortcutBlocked(): boolean {
@@ -22,7 +41,10 @@ function isShortcutBlocked(): boolean {
   )
 }
 
-export function usePresentation(getSlides: () => SlideInfo[], options: PresentationOptions = {}) {
+export function usePresentation(
+  getSlides: () => readonly SlideInfo[],
+  options: PresentationOptions = {},
+): UsePresentationApi {
   const { toggleDark, toggleFullscreen } = options
   const presenting = ref(false)
   const currentSlide = ref(0)

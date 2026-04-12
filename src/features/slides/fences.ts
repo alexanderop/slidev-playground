@@ -1,6 +1,6 @@
 export type FenceHighlightStep = number[] | ['all']
 
-export interface ParsedFenceInfo {
+export type ParsedFenceInfo = {
   filename: string | null
   highlightSteps: FenceHighlightStep[]
   highlightedLines: number[]

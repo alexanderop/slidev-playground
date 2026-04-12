@@ -8,14 +8,14 @@ import { _resetThemeForTesting } from '../composables/useTheme'
 import { clearComponentCache } from '../features/slides/render'
 import '../styles'
 
-export interface RenderAppOptions {
+export type RenderAppOptions = {
   hash?: string
   markdown?: string
   componentFiles?: Record<string, string>
   nativeShare?: boolean
 }
 
-export interface RenderedApp {
+export type RenderedApp = {
   alertSpy: ReturnType<typeof vi.fn>
   clipboardSpy: ReturnType<typeof vi.fn>
   execCommandSpy: ReturnType<typeof vi.fn>
@@ -23,7 +23,7 @@ export interface RenderedApp {
   requestFullscreenSpy: ReturnType<typeof vi.fn>
   screen: ReturnType<typeof render>
   shareSpy: ReturnType<typeof vi.fn>
-  [Symbol.dispose](): void
+  [Symbol.dispose]: () => void
 }
 
 function resetRootStyles() {
@@ -100,7 +100,7 @@ export function getMarkdown(screen: ReturnType<typeof render>) {
   return getEditorView(screen).state.doc.toString()
 }
 
-function getEditorView(screen: ReturnType<typeof render>) {
+export function getEditorView(screen: ReturnType<typeof render>) {
   const editorRoot = screen.container.querySelector('.cm-editor')
   if (!(editorRoot instanceof HTMLElement)) {
     throw new Error('Expected CodeMirror editor root to exist')
@@ -159,6 +159,10 @@ function restoreOrDeleteDocumentProperty(
   }
 
   Reflect.deleteProperty(document, property)
+}
+
+function shouldIgnoreVueWarning(message: string) {
+  return message.startsWith('Failed to resolve component:')
 }
 
 export function renderApp(options: RenderAppOptions = {}): RenderedApp {
@@ -254,7 +258,18 @@ export function renderApp(options: RenderAppOptions = {}): RenderedApp {
     value: requestFullscreenSpy,
   })
 
-  const screen = render(App)
+  const screen = render(App, {
+    global: {
+      config: {
+        warnHandler(message) {
+          if (shouldIgnoreVueWarning(message)) {
+            return
+          }
+          console.warn(`[Vue warn]: ${message}`)
+        },
+      },
+    },
+  })
 
   return {
     screen,

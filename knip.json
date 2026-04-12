@@ -1,0 +1,15 @@
+{
+  "entry": ["src/**/*.browser.test.ts"],
+  "project": ["src/**/*.{ts,vue}"],
+  "ignore": ["src/test-fixtures/**"],
+  "ignoreDependencies": [
+    "codemirror",
+    "@vue/eslint-config-typescript",
+    "@unocss/preset-attributify",
+    "@unocss/preset-typography",
+    "@unocss/preset-wind3",
+    "playwright",
+    "uno",
+    "uno.css"
+  ]
+}

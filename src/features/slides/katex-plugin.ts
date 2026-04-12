@@ -1,37 +1,14 @@
 import type MarkdownIt from 'markdown-it'
+import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs'
+import type StateBlock from 'markdown-it/lib/rules_block/state_block.mjs'
 import { renderToString } from 'katex'
 import { escapeHtmlAttribute } from '../../utils/string-utils'
 
-interface MarkdownItToken {
-  block: boolean
-  info: string
-  content: string
-  markup: string
-  map: [number, number] | null
-}
-
-interface MarkdownItInlineState {
-  src: string
-  pos: number
-  posMax: number
-  pending: string
-  push(type: string, tag: string, nesting: number): MarkdownItToken
-}
-
-interface MarkdownItBlockState {
-  src: string
-  bMarks: number[]
-  eMarks: number[]
-  tShift: number[]
-  blkIndent: number
-  line: number
-  push(type: string, tag: string, nesting: number): MarkdownItToken
-  getLines(begin: number, end: number, indent: number, keepLastLF: boolean): string
-}
+export type KatexPluginResult = { mathClicks: number }
 
 const RE_KATEX_BLOCK_INFO = /^\{([\w*,|-]+)\}/
 
-function isValidDelim(state: { posMax: number; src: string }, pos: number) {
+function isValidDelim(state: StateInline, pos: number) {
   const max = state.posMax
   let canOpen = true
   let canClose = true
@@ -49,7 +26,7 @@ function isValidDelim(state: { posMax: number; src: string }, pos: number) {
   return { canOpen, canClose }
 }
 
-function mathInline(state: MarkdownItInlineState, silent: boolean) {
+function mathInline(state: StateInline, silent: boolean) {
   if (state.src[state.pos] !== '$') {
     return false
   }
@@ -111,7 +88,7 @@ function mathInline(state: MarkdownItInlineState, silent: boolean) {
   return true
 }
 
-function mathBlock(state: MarkdownItBlockState, start: number, end: number, silent: boolean) {
+function mathBlock(state: StateBlock, start: number, end: number, silent: boolean) {
   let pos = state.bMarks[start] + state.tShift[start]
   let max = state.eMarks[start]
 
@@ -179,10 +156,6 @@ function mathBlock(state: MarkdownItBlockState, start: number, end: number, sile
 
 function escapeVue(html: string): string {
   return html.replaceAll('{{', '&lbrace;&lbrace;')
-}
-
-export interface KatexPluginResult {
-  mathClicks: number
 }
 
 export function katexPlugin(md: MarkdownIt, result: KatexPluginResult): void {

@@ -11,4 +11,5 @@ export const SlideFrontmatterSchema = z.object({
   clicks: z.optional(z.number()),
   disabled: z.optional(z.boolean()),
   hide: z.optional(z.boolean()),
+  url: z.optional(z.string()),
 })

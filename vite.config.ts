@@ -5,6 +5,9 @@ import { playwright } from 'vite-plus/test/browser-playwright'
 
 export default defineConfig({
   plugins: [vue(), Unocss()],
+  server: {
+    port: 5174,
+  },
   resolve: {
     alias: {
       vue: 'vue/dist/vue.esm-bundler.js',

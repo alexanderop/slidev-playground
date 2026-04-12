@@ -1,4 +1,5 @@
 import type { Ref } from 'vue'
+import { completionKeymap } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
@@ -7,6 +8,7 @@ import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView, keymap, lineNumbers } from '@codemirror/view'
 import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 import { slideBoundaries } from './slideBoundaries'
+import { slidevAutocompletion } from './slidevAutocompletion'
 
 export function useCodeMirror(
   container: Ref<HTMLElement | null>,
@@ -42,8 +44,9 @@ export function useCodeMirror(
       extensions: [
         lineNumbers(),
         history(),
-        keymap.of([...defaultKeymap, ...historyKeymap]),
+        keymap.of([...completionKeymap, ...defaultKeymap, ...historyKeymap]),
         markdown({ codeLanguages: languages }),
+        slidevAutocompletion,
         oneDark,
         EditorView.contentAttributes.of({
           'aria-label': 'Slide markdown editor',

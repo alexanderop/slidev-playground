@@ -1,4 +1,4 @@
-import type { Component, VNode } from 'vue'
+import type { Component, PropType, VNode } from 'vue'
 import { computed, defineComponent, h } from 'vue'
 import type { RenderedSlide } from '../types'
 
@@ -13,7 +13,7 @@ export default defineComponent({
   name: 'SlideLayoutHost',
   props: {
     slide: {
-      type: Object as () => RenderedSlide,
+      type: Object as PropType<RenderedSlide>,
       required: true,
     },
   },
@@ -24,8 +24,8 @@ export default defineComponent({
       return image !== undefined && image !== '' ? { backgroundImage: `url(${image})` } : undefined
     })
     const iframeUrl = computed(() => {
-      const value = props.slide.frontmatter.url
-      return typeof value === 'string' && value !== '' ? value : null
+      const value = props.slide.parsedFrontmatter.url
+      return value !== undefined && value !== '' ? value : null
     })
 
     return () => {

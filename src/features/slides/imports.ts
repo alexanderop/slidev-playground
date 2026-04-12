@@ -2,7 +2,7 @@ import { parseSync } from '@slidev/parser'
 import { escapeHtmlAttribute, escapeRegExp } from '../../utils/string-utils'
 import { readProjectFile } from './project-files'
 
-export interface ResolvedSlideSource {
+export type ResolvedSlideSource = {
   content: string
   filepath: string
   note?: string

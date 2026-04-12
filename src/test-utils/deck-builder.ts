@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-interface Frontmatter {
+type Frontmatter = {
   title?: string
   fonts?: { sans?: string; mono?: string }
   themeConfig?: { primary?: string }
@@ -9,7 +9,7 @@ interface Frontmatter {
   [key: string]: unknown
 }
 
-interface CodeBlockOptions {
+type CodeBlockOptions = {
   lang?: string
   filename?: string
   highlights?: string
@@ -17,7 +17,7 @@ interface CodeBlockOptions {
   startLine?: number
 }
 
-interface SlideOptions {
+type SlideOptions = {
   layout?: string
   src?: string
   class?: string
@@ -43,6 +43,35 @@ class SlideBuilder {
 
   clickAfter(content: string): this {
     this.lines.push(`<div v-after>${content}</div>`)
+    return this
+  }
+
+  clickAt(content: string, at: number): this {
+    this.lines.push(`<div v-click="${at}">${content}</div>`)
+    return this
+  }
+
+  clickHide(content: string): this {
+    this.lines.push(`<div v-click.hide>${content}</div>`)
+    return this
+  }
+
+  clickRange(content: string, range: [number, number]): this {
+    this.lines.push(`<div v-click="[${range[0]}, ${range[1]}]">${content}</div>`)
+    return this
+  }
+
+  clicksEvery(items: string[], every: number): this {
+    this.lines.push(`<ul v-clicks every="${every}">`)
+    for (const item of items) {
+      this.lines.push(`  <li>${item}</li>`)
+    }
+    this.lines.push('</ul>')
+    return this
+  }
+
+  clicksDepth(html: string): this {
+    this.lines.push(html)
     return this
   }
 

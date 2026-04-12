@@ -1,37 +1,19 @@
-import type { Ref } from 'vue'
 import { escapeRegExp } from '../../../utils/string-utils'
 
-type YamlScalar = string | number | boolean
-type YamlValue = YamlScalar | string[]
-
-/**
- * Surgically updates frontmatter properties in a raw markdown string
- * without round-tripping through a YAML serializer.
- */
-export function useFrontmatterEditor(markdown: Ref<string>) {
-  function updateProperty(dotKey: string, value: YamlValue): void {
-    const state = parseFrontmatter(markdown.value)
-    updatePath(state.frontmatter, dotKey.split('.'), value)
-
-    markdown.value = stateToMarkdown(state)
-  }
-
-  function removeProperty(dotKey: string): void {
-    const state = parseFrontmatter(markdown.value)
-    removePath(state.frontmatter, dotKey.split('.'))
-
-    markdown.value = stateToMarkdown(state)
-  }
-
-  return { updateProperty, removeProperty }
-}
+export type YamlScalar = string | number | boolean
+export type YamlValue = YamlScalar | Array<string>
 
 type FrontmatterState = {
-  frontmatter: string[]
-  body: string[]
+  frontmatter: Array<string>
+  body: Array<string>
 }
 
-function parseFrontmatter(text: string): FrontmatterState {
+type PathMatch = {
+  index: number
+  blockEnd: number
+}
+
+export function parseFrontmatter(text: string): FrontmatterState {
   const lines = text.split('\n')
   const bounds = getFrontmatterBounds(lines)
 
@@ -48,7 +30,7 @@ function parseFrontmatter(text: string): FrontmatterState {
   }
 }
 
-function stateToMarkdown(state: FrontmatterState): string {
+export function stateToMarkdown(state: FrontmatterState): string {
   if (!state.frontmatter.some((line) => line.trim() !== '')) {
     const body = [...state.body]
     while (body[0]?.trim() === '') {
@@ -65,21 +47,7 @@ function stateToMarkdown(state: FrontmatterState): string {
   return ['---', ...state.frontmatter, '---', ...body].join('\n')
 }
 
-function getFrontmatterBounds(lines: string[]): { start: number; end: number } | null {
-  if (lines[0]?.trim() !== '---') {
-    return null
-  }
-
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i]?.trim() === '---') {
-      return { start: 0, end: i }
-    }
-  }
-
-  return null
-}
-
-function updatePath(frontmatter: string[], path: string[], value: YamlValue) {
+export function updatePath(frontmatter: Array<string>, path: Array<string>, value: YamlValue) {
   if (path.length === 0) {
     return
   }
@@ -119,7 +87,7 @@ function updatePath(frontmatter: string[], path: string[], value: YamlValue) {
   }
 }
 
-function removePath(frontmatter: string[], path: string[]) {
+export function removePath(frontmatter: Array<string>, path: Array<string>) {
   if (path.length === 0) {
     return
   }
@@ -146,8 +114,22 @@ function removePath(frontmatter: string[], path: string[]) {
   }
 }
 
-function findPath(frontmatter: string[], path: string[]): PathMatch[] {
-  const matches: PathMatch[] = []
+function getFrontmatterBounds(lines: Array<string>): { start: number; end: number } | null {
+  if (lines[0]?.trim() !== '---') {
+    return null
+  }
+
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i]?.trim() === '---') {
+      return { start: 0, end: i }
+    }
+  }
+
+  return null
+}
+
+function findPath(frontmatter: Array<string>, path: Array<string>): Array<PathMatch> {
+  const matches: Array<PathMatch> = []
   let rangeStart = 0
   let rangeEnd = frontmatter.length
   let indent = 0
@@ -169,7 +151,7 @@ function findPath(frontmatter: string[], path: string[]): PathMatch[] {
 }
 
 function findKeyIndex(
-  lines: string[],
+  lines: Array<string>,
   key: string,
   indent: number,
   start: number,
@@ -186,7 +168,7 @@ function findKeyIndex(
   return -1
 }
 
-function findBlockEnd(lines: string[], keyIndex: number): number {
+function findBlockEnd(lines: Array<string>, keyIndex: number): number {
   const parentIndent = getLineIndent(lines[keyIndex] ?? '')
   let end = keyIndex + 1
 
@@ -286,7 +268,7 @@ function quoteYamlString(value: string): string {
   return `'${value.replaceAll("'", "''")}'`
 }
 
-function hasChildEntries(frontmatter: string[], keyIndex: number): boolean {
+function hasChildEntries(frontmatter: Array<string>, keyIndex: number): boolean {
   const blockEnd = findBlockEnd(frontmatter, keyIndex)
   const parentIndent = getLineIndent(frontmatter[keyIndex] ?? '')
 
@@ -306,9 +288,4 @@ function getIndent(size: number): string {
 
 function getLineIndent(line: string): number {
   return line.match(/^\s*/)?.[0].length ?? 0
-}
-
-type PathMatch = {
-  index: number
-  blockEnd: number
 }

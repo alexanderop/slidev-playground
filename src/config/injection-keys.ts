@@ -1,6 +1,6 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
 
-export interface SlideDimensions {
+export type SlideDimensions = {
   slideWidth: ComputedRef<number>
   slideHeight: ComputedRef<number>
 }
@@ -12,7 +12,7 @@ export const presentationClickKey: InjectionKey<Ref<number>> = Symbol('presentat
 export const runtimeColorSchemaKey: InjectionKey<Ref<'light' | 'dark' | 'auto'>> =
   Symbol('runtimeColorSchema')
 
-export interface SlidevNav {
+export type SlidevNav = {
   next: () => void
   prev: () => void
   nextSlide: () => void
@@ -20,3 +20,15 @@ export interface SlidevNav {
   goToSlide: (index: number) => void
 }
 export const slidevNavKey: InjectionKey<SlidevNav> = Symbol('slidevNav')
+
+export const defaultSlidevNav: SlidevNav = {
+  next: () => {},
+  prev: () => {},
+  nextSlide: () => {},
+  prevSlide: () => {},
+  goToSlide: () => {},
+}
+
+export const currentSlideIndexKey: InjectionKey<ComputedRef<number>> = Symbol('currentSlideIndex')
+export const totalSlidesKey: InjectionKey<ComputedRef<number>> = Symbol('totalSlides')
+export const effectiveModeKey: InjectionKey<ComputedRef<'light' | 'dark'>> = Symbol('effectiveMode')

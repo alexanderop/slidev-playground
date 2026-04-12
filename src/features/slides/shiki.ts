@@ -20,8 +20,10 @@ const LANGS = [
 
 const THEMES = ['vitesse-dark', 'vitesse-light'] as const
 
+const LANG_SET: ReadonlySet<string> = new Set(LANGS)
+
 function isSupportedLanguage(language: string): language is (typeof LANGS)[number] {
-  return LANGS.some((supportedLanguage) => supportedLanguage === language)
+  return LANG_SET.has(language)
 }
 
 export function getShikiHighlighter(): Promise<Highlighter> {

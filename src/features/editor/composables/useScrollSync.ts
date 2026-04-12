@@ -5,7 +5,7 @@ import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 
 type SyncSource = 'editor' | 'preview'
 
-interface ScrollContainer {
+type ScrollContainer = {
   clientHeight: number
   scrollHeight: number
 }

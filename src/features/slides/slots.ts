@@ -1,4 +1,4 @@
-export interface SlideSlotContent {
+export type SlideSlotContent = {
   name: string
   content: string
 }

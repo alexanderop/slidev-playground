@@ -3,6 +3,7 @@ import { computed, inject, ref, watchEffect } from 'vue'
 import { presentationClickKey } from '../../../config/injection-keys'
 import SlidevErrorBlock from './SlidevErrorBlock.vue'
 import { getCodeBlockHtml } from '../shiki'
+import { parseHighlightSteps } from '../../../utils/type-guards'
 
 const {
   code,
@@ -30,14 +31,7 @@ const parsedStartLine = computed(() => {
   const value = Number.parseInt(startLine, 10)
   return Number.isFinite(value) && value > 0 ? value : 1
 })
-const parsedHighlightSteps = computed(() => {
-  try {
-    const parsed = JSON.parse(highlightSteps) as Array<number[] | ['all']>
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-})
+const parsedHighlightSteps = computed(() => parseHighlightSteps(highlightSteps))
 const activeHighlightLines = computed(() => {
   if (parsedHighlightSteps.value.length === 0) {
     return []

@@ -6,9 +6,9 @@ const activeTitle = ref('')
 const tabs = ref<string[]>([])
 
 function updateActiveBlock() {
-  const blocks = blocksRef.value?.querySelectorAll('.slidev-code-block[data-title]')
+  const blocks = blocksRef.value?.querySelectorAll<HTMLElement>('.slidev-code-block[data-title]')
   blocks?.forEach((block) => {
-    const title = (block as HTMLElement).dataset.title
+    const title = block.dataset.title
     block.classList.toggle('active', title === activeTitle.value)
   })
 }
@@ -19,9 +19,9 @@ function selectTab(tab: string) {
 }
 
 onMounted(() => {
-  const blocks = blocksRef.value?.querySelectorAll('.slidev-code-block[data-title]')
+  const blocks = blocksRef.value?.querySelectorAll<HTMLElement>('.slidev-code-block[data-title]')
   blocks?.forEach((block) => {
-    const title = (block as HTMLElement).dataset.title ?? ''
+    const title = block.dataset.title ?? ''
     if (title) {
       tabs.value.push(title)
       if (activeTitle.value === '') {

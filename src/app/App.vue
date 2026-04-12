@@ -17,12 +17,16 @@ import { useTheme } from '../composables/useTheme'
 import { useUrlSync } from '../composables/useUrlSync'
 import {
   componentFilesKey,
+  currentSlideIndexKey,
+  effectiveModeKey,
   markdownKey,
   presentationClickKey,
   runtimeColorSchemaKey,
   slidevNavKey,
+  totalSlidesKey,
 } from '../config/injection-keys'
 import { defaultComponentFiles, defaultContent } from '../config/default-content'
+import { getOptionalRecord, getOptionalString } from '../utils/type-guards'
 import { resolveSlidesFromMarkdown } from '../features/slides/imports'
 import { compileCustomComponents, parseComponentFiles } from '../features/slides/custom-components'
 import { clearComponentCache, renderSlides } from '../features/slides/render'
@@ -40,15 +44,15 @@ const { config } = useHeadmatter(parsed)
 const runtimeColorSchema = ref<'light' | 'dark' | 'auto'>('auto')
 provide(runtimeColorSchemaKey, runtimeColorSchema)
 const defaults = computed(
-  () => (parsed.value.slides[0]?.frontmatter.defaults as Record<string, unknown> | undefined) ?? {},
+  () => getOptionalRecord(parsed.value.slides[0]?.frontmatter.defaults) ?? {},
 )
 
 const slideDimensions = useSlideDimensions(config)
 
 const { effectiveMode } = useTheme({
-  frontmatterPrimary: computed(() => config.value.themeConfig?.primary as string | undefined),
-  frontmatterColorSchema: computed(() => config.value.colorSchema as string | undefined),
-  themeConfig: computed(() => config.value.themeConfig as Record<string, unknown> | undefined),
+  frontmatterPrimary: computed(() => getOptionalString(config.value.themeConfig?.primary)),
+  frontmatterColorSchema: computed(() => getOptionalString(config.value.colorSchema)),
+  themeConfig: computed(() => getOptionalRecord(config.value.themeConfig)),
   runtimeColorSchema,
 })
 
@@ -111,6 +115,15 @@ provide(slidevNavKey, {
   prevSlide: presentation.prevSlide,
   goToSlide: presentation.goToSlide,
 })
+provide(
+  currentSlideIndexKey,
+  computed(() => presentation.currentSlide.value),
+)
+provide(
+  totalSlidesKey,
+  computed(() => renderedSlides.value.length),
+)
+provide(effectiveModeKey, effectiveMode)
 
 const previewRef = ref<HTMLElement | null>(null)
 const editorView = ref<EditorView | null>(null)

@@ -10,15 +10,19 @@ const UrlStateSchema = z.object({
   c: z.optional(z.record(z.string(), z.string())),
 })
 
-export interface PlaygroundState {
-  markdown: string
-  componentFiles: Record<string, string>
+import type { Brand } from '../types/brand'
+
+type PlaygroundStateShape = {
+  readonly markdown: string
+  readonly componentFiles: Record<string, string>
 }
 
-export interface PlaygroundDefaults {
-  markdown: string
-  componentFiles: Record<string, string>
-}
+export type PlaygroundState = Brand<PlaygroundStateShape, 'PlaygroundState'>
+
+export type PlaygroundDefaults = PlaygroundStateShape
+
+/* eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion */
+const asPlaygroundState = (value: PlaygroundStateShape): PlaygroundState => value as PlaygroundState
 
 export function useUrlSync(
   markdown: Ref<string>,
@@ -31,16 +35,25 @@ export function useUrlSync(
   function loadFromHash(): PlaygroundState {
     const hash = window.location.hash.slice(1)
     if (!hash) {
-      return { markdown: defaults.markdown, componentFiles: defaults.componentFiles }
+      return asPlaygroundState({
+        markdown: defaults.markdown,
+        componentFiles: defaults.componentFiles,
+      })
     }
     try {
       const raw = decompressFromEncodedURIComponent(hash)
       if (!raw) {
-        return { markdown: defaults.markdown, componentFiles: defaults.componentFiles }
+        return asPlaygroundState({
+          markdown: defaults.markdown,
+          componentFiles: defaults.componentFiles,
+        })
       }
       return decodeState(raw, defaults.markdown)
     } catch {
-      return { markdown: defaults.markdown, componentFiles: defaults.componentFiles }
+      return asPlaygroundState({
+        markdown: defaults.markdown,
+        componentFiles: defaults.componentFiles,
+      })
     }
   }
 
@@ -82,13 +95,16 @@ function decodeState(raw: string, defaultContent: string): PlaygroundState {
     try {
       const result = UrlStateSchema.safeParse(JSON.parse(raw))
       if (result.success) {
-        return { markdown: result.data.m, componentFiles: result.data.c ?? {} }
+        return asPlaygroundState({
+          markdown: result.data.m,
+          componentFiles: result.data.c ?? {},
+        })
       }
-      return { markdown: defaultContent, componentFiles: {} }
+      return asPlaygroundState({ markdown: defaultContent, componentFiles: {} })
     } catch {
-      return { markdown: defaultContent, componentFiles: {} }
+      return asPlaygroundState({ markdown: defaultContent, componentFiles: {} })
     }
   }
   // Legacy format: plain markdown string
-  return { markdown: raw, componentFiles: {} }
+  return asPlaygroundState({ markdown: raw, componentFiles: {} })
 }

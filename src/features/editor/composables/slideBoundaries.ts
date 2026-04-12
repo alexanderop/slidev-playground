@@ -10,7 +10,7 @@ import {
 
 // --- Slide boundary detection ---
 
-interface SlideRegion {
+type SlideRegion = {
   /** 1-based slide number */
   number: number
   /** Line number (1-based) where this slide starts */

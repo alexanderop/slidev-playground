@@ -2,14 +2,14 @@ import type { Component } from 'vue'
 import { compile, defineComponent, markRaw } from 'vue'
 import SlidevErrorBlock from './components/SlidevErrorBlock.vue'
 
-export interface ParsedComponentDef {
+export type ParsedComponentDef = {
   name: string
   props: string[]
   template: string
   style: string
 }
 
-export interface CompiledCustomComponents {
+export type CompiledCustomComponents = {
   components: Record<string, Component>
   styles: string
 }
