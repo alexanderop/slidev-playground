@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 import { completionKeymap } from '@codemirror/autocomplete'
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
 import { EditorState } from '@codemirror/state'
@@ -44,7 +44,7 @@ export function useCodeMirror(
       extensions: [
         lineNumbers(),
         history(),
-        keymap.of([...completionKeymap, ...defaultKeymap, ...historyKeymap]),
+        keymap.of([...completionKeymap, ...defaultKeymap, ...historyKeymap, indentWithTab]),
         markdown({ codeLanguages: languages }),
         slidevAutocompletion,
         oneDark,

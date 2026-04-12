@@ -83,6 +83,31 @@ it('Given a click component tag prefix When the completion source runs Then it s
   expect(result?.options.some((option) => option.label === '<v-clicks>')).toBe(true)
 })
 
+it('Given a bare component name without a leading angle bracket When the completion source runs Then it still suggests click animation components', () => {
+  const doc = '# Intro\n\nv-cli'
+  const result = slidevCompletionSource(buildContext(doc))
+
+  expect(result).toBeTruthy()
+  if (!result) {
+    return
+  }
+  expect(result.options.some((option) => option.label === '<v-click>')).toBe(true)
+  expect(result.options.some((option) => option.label === '<v-clicks>')).toBe(true)
+  expect(doc.slice(result.from)).toBe('v-cli')
+})
+
+it('Given a bare component name after leading whitespace When the completion source runs Then it suggests components anchored at the word', () => {
+  const doc = '# Intro\n\n  Arr'
+  const result = slidevCompletionSource(buildContext(doc))
+
+  expect(result).toBeTruthy()
+  if (!result) {
+    return
+  }
+  expect(result.options.some((option) => option.label === '<Arrow />')).toBe(true)
+  expect(doc.slice(result.from)).toBe('Arr')
+})
+
 it('Given a transition frontmatter key When the completion source runs Then it suggests transition values', () => {
   const doc = `---\ntransition: fa\n---\n`
   const cursor = doc.indexOf('fa') + 'fa'.length

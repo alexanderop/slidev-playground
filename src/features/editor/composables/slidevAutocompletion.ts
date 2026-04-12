@@ -34,12 +34,14 @@ export function slidevCompletionSource(context: CompletionContext): CompletionRe
     }
   }
 
-  const componentMatch = /<\/?([A-Za-z][\w-]*)$/.exec(lineBefore)
+  const componentMatch = /(?:^|\s)(<?)\/?([A-Za-z][\w-]*)$/.exec(lineBefore)
   if (componentMatch) {
+    const word = componentMatch[2]
+    const bracketOffset = componentMatch[1] === '<' ? 1 : 0
     return {
-      from: context.pos - componentMatch[1].length - 1,
+      from: context.pos - word.length - bracketOffset,
       options: componentCompletions,
-      validFor: /^<\/?[A-Za-z][\w-]*$/,
+      validFor: /^<?\/?[A-Za-z][\w-]*$/,
     }
   }
 

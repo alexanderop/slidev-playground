@@ -1,4 +1,5 @@
 import { AppPage } from './test-utils/page-objects/app-page'
+import { getEditorView, getMarkdown, pressKey, setMarkdown } from './test-utils/app-browser'
 import { TWO_SLIDE_DECK } from './test-utils/browser-test-fixtures'
 import { deck } from './test-utils/deck-builder'
 
@@ -46,6 +47,25 @@ it('Given the split pane When the user drags the divider Then the editor pane wi
   await new Promise((resolve) => setTimeout(resolve, 50))
 
   expect(editorPane.style.width).not.toBe(startWidth)
+})
+
+it('Given the editor is focused When the user presses Tab Then it indents instead of moving focus', async () => {
+  using app = await AppPage.render({ markdown: TWO_SLIDE_DECK })
+
+  await setMarkdown(app.screen, 'hello')
+  const view = getEditorView(app.screen)
+  view.focus()
+  view.dispatch({ selection: { anchor: 0 } })
+
+  const contentEl = app.container.querySelector('.cm-content')
+  if (!(contentEl instanceof HTMLElement)) {
+    throw new Error('Expected cm-content element to exist')
+  }
+  contentEl.focus()
+
+  await pressKey('Tab')
+
+  expect(getMarkdown(app.screen)).toBe('  hello')
 })
 
 it('Given presentation mode When the user clicks the right click-zone Then the deck advances', async () => {
