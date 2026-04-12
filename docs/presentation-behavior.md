@@ -75,6 +75,7 @@ These work whenever focus is not inside a blocked input target:
 - `g` opens or closes the goto dialog
 - `d` toggles dark mode
 - `f` toggles fullscreen only while presenting
+- `?` opens the keyboard shortcuts help dialog
 
 Behavior details:
 
@@ -84,6 +85,9 @@ Behavior details:
 - `g` closes overview when opening goto
 - `f` is ignored when not presenting
 - repeated `f` keydown events are ignored to avoid fullscreen toggle spam
+- `?` is a discoverability aid: it lists every shortcut in a modal, works in
+  both preview and presentation mode, and is closed by pressing `?` again or
+  `Escape`
 
 ### Presentation-only shortcuts
 

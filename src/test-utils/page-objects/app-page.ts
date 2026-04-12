@@ -116,6 +116,14 @@ export class AppPage {
       expect(this.screen.getByRole('dialog', { name: 'Goto slide' })).toBeTruthy()
     },
 
+    openShortcutsHelp: async () => {
+      await pressKey('?', { shiftKey: true })
+    },
+
+    expectShortcutsHelpOpen: () => {
+      expect(this.screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeTruthy()
+    },
+
     searchGoto: async (query: string) => {
       const input = this.screen.getByRole('textbox', { name: 'Goto slide' })
       await input.fill(query)
