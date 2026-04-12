@@ -2,10 +2,7 @@ import { AppPage } from './test-utils/page-objects/app-page'
 import { deck } from './test-utils/deck-builder'
 
 function minimalDeck() {
-  return deck()
-    .title('Original title')
-    .slide('Intro')
-    .build()
+  return deck().title('Original title').slide('Intro').build()
 }
 
 it('Given the style panel When the user edits the title Then the shared markdown keeps the new title', async () => {
@@ -54,11 +51,7 @@ it('Given the style panel When the user drags the contrast slider Then themeConf
 })
 
 it('Given the style panel When the user enters a non-numeric canvas width Then the canvasWidth property is removed', async () => {
-  const markdown = deck()
-    .title('Canvas deck')
-    .canvasWidth(1200)
-    .slide('Intro')
-    .build()
+  const markdown = deck().title('Canvas deck').canvasWidth(1200).slide('Intro').build()
 
   using app = await AppPage.render({ markdown })
 

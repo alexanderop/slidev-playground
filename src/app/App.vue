@@ -6,6 +6,7 @@ import { computed, onMounted, onUnmounted, provide, ref, watch, watchEffect } fr
 
 import EditorLayout from '../features/editor/components/EditorLayout.vue'
 import PresentationOverlay from '../features/presentation/components/PresentationOverlay.vue'
+import ShortcutsDialog from '../features/presentation/components/ShortcutsDialog.vue'
 import { useFontLoader } from '../composables/useFontLoader'
 import { useHeadmatter } from '../composables/useHeadmatter'
 import { usePresentation } from '../features/presentation/composables/usePresentation'
@@ -172,5 +173,10 @@ useScrollSync(
     @share="share"
     @present="presentation.start"
     @start-drag="startDrag"
+  />
+
+  <ShortcutsDialog
+    :open="presentation.showShortcutsDialog.value"
+    @close="presentation.showShortcutsDialog.value = false"
   />
 </template>

@@ -21,6 +21,7 @@ export type UsePresentationApi = {
   readonly showNotes: Ref<boolean>
   readonly showOverview: Ref<boolean>
   readonly showGotoDialog: Ref<boolean>
+  readonly showShortcutsDialog: Ref<boolean>
   start: (slideIndex?: number) => void
   stop: () => void
   next: () => void
@@ -54,6 +55,7 @@ export function usePresentation(
   const showNotes = ref(false)
   const showOverview = ref(false)
   const showGotoDialog = ref(false)
+  const showShortcutsDialog = ref(false)
 
   const transitionName = computed(() => {
     const slides = getSlides()
@@ -76,6 +78,7 @@ export function usePresentation(
     showOverview.value = false
     showNotes.value = false
     showGotoDialog.value = false
+    showShortcutsDialog.value = false
   }
 
   function next() {
@@ -207,6 +210,18 @@ export function usePresentation(
         return
       }
 
+      if (key === '?') {
+        event.preventDefault()
+        showShortcutsDialog.value = !showShortcutsDialog.value
+        return
+      }
+
+      if (key === 'Escape' && showShortcutsDialog.value) {
+        event.preventDefault()
+        showShortcutsDialog.value = false
+        return
+      }
+
       if (lower === 'f') {
         if (!presenting.value) {
           return
@@ -224,6 +239,10 @@ export function usePresentation(
 
       if (key === 'Escape') {
         event.preventDefault()
+        if (showShortcutsDialog.value) {
+          showShortcutsDialog.value = false
+          return
+        }
         if (showGotoDialog.value) {
           showGotoDialog.value = false
           return
@@ -242,7 +261,7 @@ export function usePresentation(
         return
       }
 
-      if (showGotoDialog.value || showOverview.value) {
+      if (showGotoDialog.value || showOverview.value || showShortcutsDialog.value) {
         return
       }
 
@@ -300,6 +319,7 @@ export function usePresentation(
     showNotes,
     showOverview,
     showGotoDialog,
+    showShortcutsDialog,
     start,
     stop,
     next,
