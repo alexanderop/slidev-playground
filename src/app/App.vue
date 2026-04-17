@@ -163,7 +163,6 @@ useScrollSync(
     v-model:preview-ref="previewRef"
     :markdown="markdown"
     :component-files="componentFiles"
-    :config="config"
     :rendered-slides="renderedSlides"
     :split-percent="splitPercent"
     :slide-scale="slideScale"

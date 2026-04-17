@@ -33,7 +33,7 @@ Custom oxlint rules in `src/lint/feature-boundaries.js` enforce:
 
 Important composables/components:
 
-- `editor`: `useCodeMirror`, `useFrontmatterEditor`, `useScrollSync`
+- `editor`: `useCodeMirror`, `useFrontmatterField`, `useScrollSync`
 - `presentation`: `usePresentation`, `useClickAnimation`
 - `slides`: mostly pure rendering functions rather than composables
 

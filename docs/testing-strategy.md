@@ -4,12 +4,23 @@ This document explains the testing philosophy and setup for this project.
 
 ## Philosophy
 
-### Browser-Only, App-First Testing
+### Browser-First, App-First Testing
 
-All tests run in Vitest browser mode (Playwright/Chromium) and render the real
-`App.vue`. There are no Node-based unit tests. Every test exercises the app the
-way a user experiences it: editing slides, checking preview output, presenting,
-navigating, opening notes/overview, and sharing the deck.
+Default: tests run in Vitest browser mode (Playwright/Chromium) and render the
+real `App.vue`. Every such test exercises the app the way a user experiences
+it: editing slides, checking preview output, presenting, navigating, opening
+notes/overview, and sharing the deck.
+
+Exception — pure helpers with no DOM or Vue dependency may run as Node unit
+tests. The test split is driven entirely by filename:
+
+- `*.browser.test.ts` runs in the `browser` project (Playwright/Chromium).
+- `*.test.ts` runs in the `node` project (Node environment, no DOM).
+
+The projects are declared in `vite.config.ts` under `test.projects`. Put a test
+in the node project only when the subject is framework-free (string utils,
+parsers, pure functions). Anything that touches Vue, the DOM, or a composable's
+reactive surface belongs in the browser project.
 
 ### Flat Tests, No Hooks
 
@@ -170,8 +181,13 @@ it('Given native share is available When the user shares Then the app uses the b
 
 ## Naming Convention
 
-All test files use the `*.browser.test.ts` suffix. This is the only test
-pattern recognized by the vitest config.
+Test files use one of two suffixes:
+
+- `*.browser.test.ts` — browser project (default for anything touching Vue or
+  the DOM).
+- `*.test.ts` — node project (framework-free unit tests only).
+
+No other test patterns are picked up by the vitest config.
 
 ## Imports
 

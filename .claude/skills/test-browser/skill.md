@@ -15,6 +15,7 @@ This workflow uses the `agent-browser` CLI exclusively. Do not use any alternati
 Use `agent-browser` for: opening pages, clicking elements, filling forms, taking screenshots, and scraping rendered content.
 
 Platform-specific hints:
+
 - In Claude Code, do not use Chrome MCP tools (`mcp__claude-in-chrome__*`).
 - In Codex, do not substitute unrelated browsing tools.
 
@@ -62,16 +63,19 @@ Store the choice and use the `--headed` flag when the user selects option 1.
 ### 3. Determine Test Scope
 
 **If PR number provided:**
+
 ```bash
 gh pr view [number] --json files -q '.files[].path'
 ```
 
 **If 'current' or empty:**
+
 ```bash
 git diff --name-only main...HEAD
 ```
 
 **If branch name provided:**
+
 ```bash
 git diff --name-only main...[branch]
 ```
@@ -80,12 +84,12 @@ git diff --name-only main...[branch]
 
 Map changed files to testable routes:
 
-| File Pattern | Route(s) |
-|-------------|----------|
-| `src/app/*` (Next.js) | Corresponding routes |
-| `src/components/*` | Pages using those components |
-| `src/features/*` | Feature-related pages |
-| `src/views/*` | Corresponding routes |
+| File Pattern          | Route(s)                     |
+| --------------------- | ---------------------------- |
+| `src/app/*` (Next.js) | Corresponding routes         |
+| `src/components/*`    | Pages using those components |
+| `src/features/*`      | Feature-related pages        |
+| `src/views/*`         | Corresponding routes         |
 
 ### 5. Detect Dev Server Port
 
@@ -114,6 +118,7 @@ agent-browser snapshot -i
 ```
 
 Verify key elements:
+
 - Page title/heading present
 - Primary content rendered
 - No error messages visible

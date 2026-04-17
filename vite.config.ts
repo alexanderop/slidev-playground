@@ -177,19 +177,36 @@ export default defineConfig({
   },
 
   test: {
-    include: ['src/**/*.browser.test.ts'],
     globals: true,
-    browser: {
-      enabled: true,
-      provider: playwright(),
-      headless: true,
-      instances: [{ browser: 'chromium' }],
-    },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'browser',
+          include: ['src/**/*.browser.test.ts'],
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            instances: [{ browser: 'chromium' }],
+          },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          include: ['src/**/*.test.ts'],
+          exclude: ['src/**/*.browser.test.ts'],
+          environment: 'node',
+        },
+      },
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/**/*.{ts,vue}'],
-      exclude: ['src/**/*.browser.test.ts', 'src/**/*.d.ts', 'src/main.ts'],
+      exclude: ['src/**/*.{browser.test,test}.ts', 'src/**/*.d.ts', 'src/main.ts'],
     },
   },
 

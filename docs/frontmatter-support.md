@@ -29,8 +29,10 @@ The style/config panel currently exposes:
 - `canvasWidth`
 - `aspectRatio`
 
-These are edited surgically in markdown by `useFrontmatterEditor`, not by
-re-serializing the entire frontmatter object.
+These are edited surgically in markdown through `useFrontmatterField`, the
+canonical typed field-binding composable. It wraps the pure `applyPatch` and
+`readPath` core at `src/features/editor/frontmatter/core.ts` — neither path
+re-serializes the entire frontmatter object.
 
 ## Per-Slide Frontmatter Used by the Renderer
 
@@ -75,6 +77,29 @@ The config panel normalizes and constrains some values:
 - `canvasWidth` must be a positive number
 - `aspectRatio` is normalized to `16:9`, `4:3`, or `1:1`
 - empty optional string fields remove the property from frontmatter
+
+## Module Design: Functional Core + Reactive Shell
+
+The frontmatter editing pipeline follows a "functional core, reactive shell"
+pattern:
+
+- **Core** (`src/features/editor/frontmatter/core.ts`) — pure string-in,
+  string-out functions (`applyPatch`, `readPath`). No Vue imports.
+  Unit-testable in Node without a browser.
+- **Shell** (`useFrontmatterField`) — single composable that wraps the core
+  with Vue reactivity, typed schemas, validation, and WeakMap-memoized
+  parsing.
+
+This structure means:
+
+- Field definitions (path, type, validation, normalization) live in one place
+- Adding a new config field requires only one `useFrontmatterField()` call
+- The core can be unit-tested in milliseconds without browser spin-up
+- `useFrontmatterEditor` remains as an escape hatch for multi-field atomic
+  edits
+
+Apply this pattern when you have surgical edits over a raw string format and
+want typed reactive bindings without re-serializing the entire document.
 
 ## Change Guidelines
 

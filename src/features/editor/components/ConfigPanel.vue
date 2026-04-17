@@ -1,106 +1,61 @@
 <script setup lang="ts">
-import type { SlidevConfig } from '../../../composables/useHeadmatter'
-import { computed, inject } from 'vue'
 import FontAutocomplete from './FontAutocomplete.vue'
-import { useFrontmatterEditor } from '../composables/useFrontmatterEditor'
-import { markdownKey } from '../../../config/injection-keys'
-
-const { config } = defineProps<{
-  config: SlidevConfig
-}>()
+import { useFrontmatterField } from '../composables/useFrontmatterField'
 
 defineEmits<{
   close: []
 }>()
 
-const markdown = inject(markdownKey)!
-const { updateProperty, removeProperty } = useFrontmatterEditor(markdown)
-
-function updateOptionalStringProperty(path: string, value: string) {
-  if (!value) {
-    removeProperty(path)
-    return
-  }
-  updateProperty(path, value)
-}
-
-function normalizeFontValue(value: unknown): string {
-  if (Array.isArray(value)) {
-    return String(value[0] ?? '').replaceAll('"', '')
-  }
-
-  return typeof value === 'string' ? value : ''
-}
-
-const title = computed(() => config.title ?? '')
-const colorSchema = computed(() => normalizeColorSchema(config.colorSchema))
-const primaryColor = computed(() => (config.themeConfig?.primary as string) ?? '#4fc08d')
-const fontSans = computed(() => normalizeFontValue(config.fonts?.sans))
-const fontMono = computed(() => normalizeFontValue(config.fonts?.mono))
-const contrast = computed(() => Number(config.themeConfig?.contrast ?? 72))
-const canvasWidth = computed(() => String(config.canvasWidth ?? 980))
-const aspectRatio = computed(() => normalizeAspectRatio(config.aspectRatio))
-
-function normalizeColorSchema(value: unknown): 'auto' | 'light' | 'dark' {
-  return value === 'light' || value === 'dark' || value === 'auto' ? value : 'auto'
-}
-
-function normalizeAspectRatio(value: unknown): string {
-  if (typeof value === 'string') {
-    return aspectRatioOptions.some((option) => option.value === value) ? value : '16:9'
-  }
-
-  if (typeof value === 'number') {
-    if (Math.abs(value - 4 / 3) < 0.001) {
+const title = useFrontmatterField('title')
+const colorSchema = useFrontmatterField('colorSchema', {
+  type: 'enum',
+  values: ['auto', 'light', 'dark'] as const,
+  default: 'auto',
+})
+const primaryColor = useFrontmatterField('themeConfig.primary', {
+  default: '#4fc08d',
+  allowEmpty: true,
+})
+const contrast = useFrontmatterField('themeConfig.contrast', {
+  type: 'number',
+  default: 72,
+  min: 30,
+  max: 100,
+  integer: true,
+})
+const canvasWidth = useFrontmatterField('canvasWidth', {
+  type: 'number',
+  default: 980,
+  min: 1,
+  integer: true,
+})
+const aspectRatio = useFrontmatterField('aspectRatio', {
+  type: 'enum',
+  values: ['16:9', '4:3', '1:1'] as const,
+  default: '16:9',
+  parse: (raw) => {
+    if (typeof raw !== 'number') {
+      return undefined
+    }
+    if (Math.abs(raw - 4 / 3) < 0.001) {
       return '4:3'
     }
-    if (Math.abs(value - 1) < 0.001) {
+    if (Math.abs(raw - 1) < 0.001) {
       return '1:1'
     }
+    return undefined
+  },
+})
+
+const fontParse = (raw: unknown): string => {
+  if (Array.isArray(raw)) {
+    return String(raw[0] ?? '').replaceAll('"', '')
   }
-
-  return '16:9'
+  return typeof raw === 'string' ? raw : ''
 }
 
-function onTitleChange(value: string) {
-  updateOptionalStringProperty('title', value)
-}
-
-function onColorSchemaChange(value: string) {
-  updateProperty('colorSchema', value)
-}
-
-function onPrimaryColorChange(value: string) {
-  updateProperty('themeConfig.primary', value)
-}
-
-function onContrastChange(value: string) {
-  const next = Number.parseInt(value, 10)
-  if (Number.isFinite(next) && next >= 30 && next <= 100) {
-    updateProperty('themeConfig.contrast', next)
-  }
-}
-
-function onFontSansChange(value: string) {
-  updateOptionalStringProperty('fonts.sans', value)
-}
-
-function onFontMonoChange(value: string) {
-  updateOptionalStringProperty('fonts.mono', value)
-}
-
-function onCanvasWidthChange(value: string) {
-  const next = Number.parseInt(value, 10)
-  if (Number.isFinite(next) && next > 0) {
-    updateProperty('canvasWidth', next)
-    return
-  }
-  removeProperty('canvasWidth')
-}
-
-function onAspectRatioChange(value: string) {
-  updateProperty('aspectRatio', value)
-}
+const fontSans = useFrontmatterField('fonts.sans', { parse: fontParse })
+const fontMono = useFrontmatterField('fonts.mono', { parse: fontParse })
 
 const colorSchemaOptions = [
   { label: 'Auto', value: 'auto' },
@@ -172,11 +127,10 @@ const monoFonts = [
           <label class="field">
             <span class="field-label">Title</span>
             <input
+              v-model="title"
               type="text"
               class="field-input"
-              :value="title"
               placeholder="Presentation title"
-              @input="onTitleChange(($event.target as HTMLInputElement).value)"
             />
           </label>
         </section>
@@ -191,7 +145,7 @@ const monoFonts = [
                 :key="option.value"
                 class="toggle-btn"
                 :class="{ active: colorSchema === option.value }"
-                @click="onColorSchemaChange(option.value)"
+                @click="colorSchema = option.value"
               >
                 {{ option.label }}
               </button>
@@ -200,31 +154,20 @@ const monoFonts = [
           <label class="field">
             <span class="field-label">Primary color</span>
             <div class="color-field">
-              <input
-                type="color"
-                class="color-picker"
-                :value="primaryColor"
-                @input="onPrimaryColorChange(($event.target as HTMLInputElement).value)"
-              />
-              <input
-                type="text"
-                class="field-input color-hex"
-                :value="primaryColor"
-                @input="onPrimaryColorChange(($event.target as HTMLInputElement).value)"
-              />
+              <input v-model="primaryColor" type="color" class="color-picker" />
+              <input v-model="primaryColor" type="text" class="field-input color-hex" />
             </div>
           </label>
           <label class="field">
             <span class="field-label">Contrast</span>
             <div class="contrast-field">
               <input
+                v-model.number="contrast"
                 type="range"
                 min="30"
                 max="100"
                 step="1"
                 class="contrast-slider"
-                :value="contrast"
-                @input="onContrastChange(($event.target as HTMLInputElement).value)"
               />
               <span class="contrast-value">{{ contrast }}</span>
             </div>
@@ -232,21 +175,16 @@ const monoFonts = [
           <label class="field">
             <span class="field-label">Canvas width</span>
             <input
+              v-model.number="canvasWidth"
               type="number"
               min="320"
               step="10"
               class="field-input"
-              :value="canvasWidth"
-              @input="onCanvasWidthChange(($event.target as HTMLInputElement).value)"
             />
           </label>
           <label class="field">
             <span class="field-label">Aspect ratio</span>
-            <select
-              class="field-input"
-              :value="aspectRatio"
-              @change="onAspectRatioChange(($event.target as HTMLSelectElement).value)"
-            >
+            <select v-model="aspectRatio" class="field-input">
               <option
                 v-for="option in aspectRatioOptions"
                 :key="option.value"
@@ -263,19 +201,17 @@ const monoFonts = [
           <label class="field">
             <span class="field-label">Sans font</span>
             <FontAutocomplete
-              :model-value="fontSans"
+              v-model="fontSans"
               :suggestions="sansFonts"
               placeholder="e.g. Inter"
-              @update:model-value="onFontSansChange"
             />
           </label>
           <label class="field">
             <span class="field-label">Mono font</span>
             <FontAutocomplete
-              :model-value="fontMono"
+              v-model="fontMono"
               :suggestions="monoFonts"
               placeholder="e.g. Fira Code"
-              @update:model-value="onFontMonoChange"
             />
           </label>
         </section>

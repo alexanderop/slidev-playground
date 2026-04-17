@@ -1,22 +1,19 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
-import type { SlidevConfig } from '../../../composables/useHeadmatter'
 import type { RenderedSlide } from '../../../types'
 import { computed, ref } from 'vue'
 import CodeMirrorEditor from './CodeMirrorEditor.vue'
 import ConfigPanel from './ConfigPanel.vue'
 import SlidePreview from '../../../components/SlidePreview.vue'
 
-const { markdown, componentFiles, config, renderedSlides, splitPercent, slideScale, copied } =
-  defineProps<{
-    markdown: string
-    componentFiles: Record<string, string>
-    config: SlidevConfig
-    renderedSlides: RenderedSlide[]
-    splitPercent: number
-    slideScale: number
-    copied: boolean
-  }>()
+const { markdown, componentFiles, renderedSlides, splitPercent, slideScale, copied } = defineProps<{
+  markdown: string
+  componentFiles: Record<string, string>
+  renderedSlides: RenderedSlide[]
+  splitPercent: number
+  slideScale: number
+  copied: boolean
+}>()
 
 const emit = defineEmits<{
   'update:markdown': [value: string]
@@ -192,7 +189,7 @@ function removeFile(name: string) {
             @select="$emit('present', index)"
           />
         </div>
-        <ConfigPanel v-if="configOpen" :config="config" @close="configOpen = false" />
+        <ConfigPanel v-if="configOpen" @close="configOpen = false" />
       </div>
     </div>
   </div>
