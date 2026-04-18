@@ -193,7 +193,7 @@ it('Given an enum field with parse When the raw value is a legacy shape Then par
         if (typeof raw === 'number' && Math.abs(raw - 4 / 3) < 0.001) {
           return '4:3'
         }
-        return undefined
+        return
       },
     }),
   }))

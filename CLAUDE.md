@@ -41,6 +41,7 @@ Run `vp run check` after code changes.
 Before starting any task, identify which docs are relevant and read them first.
 Load domain-specific docs before making changes, not after getting stuck.
 
+- `UBIQUITOUS_LANGUAGE.md` - canonical domain vocabulary; use these terms exactly in code, comments, and docs
 - `docs/system-architecture.md` - architecture, state flow, render pipeline, theming
 - `docs/url-state-and-sharing.md` - URL hash format, sharing flow, legacy compatibility
 - `docs/custom-components.md` - component file model, parsing, compilation, styling, failure modes

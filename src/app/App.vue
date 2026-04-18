@@ -2,7 +2,7 @@
 import type { EditorView } from '@codemirror/view'
 import { parseSync } from '@slidev/parser'
 import { useFullscreen } from '@vueuse/core'
-import { computed, onMounted, onUnmounted, provide, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref, watchEffect } from 'vue'
 
 import EditorLayout from '../features/editor/components/EditorLayout.vue'
 import PresentationOverlay from '../features/presentation/components/PresentationOverlay.vue'
@@ -30,8 +30,7 @@ import { defaultComponentFiles, defaultContent } from '../config/default-content
 import { getOptionalRecord, getOptionalString } from '../utils/type-guards'
 import { resolveSlidesFromMarkdown } from '../features/slides/imports'
 import { compileCustomComponents, parseComponentFiles } from '../features/slides/custom-components'
-import { clearComponentCache, renderSlides } from '../features/slides/render'
-import type { RenderedSlide } from '../types'
+import { useSlideRenderer } from '../features/slides/render'
 
 const markdown = ref('')
 const componentFiles = ref<Record<string, string>>({})
@@ -64,15 +63,11 @@ const customComponents = computed(() => {
   return compileCustomComponents(parsedComponents)
 })
 
-watch(customComponents, () => clearComponentCache())
-
-const renderedSlides = computed<RenderedSlide[]>(() => {
-  return renderSlides(
-    resolvedSlides.value,
-    config.value,
-    defaults.value,
-    customComponents.value.components,
-  )
+const renderedSlides = useSlideRenderer({
+  slides: resolvedSlides,
+  config,
+  defaults,
+  customComponents: () => customComponents.value.components,
 })
 
 const { loadFromHash, share, copied } = useUrlSync(markdown, componentFiles, {

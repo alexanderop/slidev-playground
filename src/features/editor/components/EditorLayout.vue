@@ -9,7 +9,7 @@ import SlidePreview from '../../../components/SlidePreview.vue'
 const { markdown, componentFiles, renderedSlides, splitPercent, slideScale, copied } = defineProps<{
   markdown: string
   componentFiles: Record<string, string>
-  renderedSlides: RenderedSlide[]
+  renderedSlides: readonly RenderedSlide[]
   splitPercent: number
   slideScale: number
   copied: boolean

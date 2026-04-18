@@ -5,7 +5,6 @@ import { nextTick } from 'vue'
 import { z } from 'zod/mini'
 import App from '../app/App.vue'
 import { _resetThemeForTesting } from '../composables/useTheme'
-import { clearComponentCache } from '../features/slides/render'
 import '../styles'
 
 export type RenderAppOptions = {
@@ -170,7 +169,6 @@ export function renderApp(options: RenderAppOptions = {}): RenderedApp {
 
   _resetThemeForTesting()
   resetRootStyles()
-  clearComponentCache()
 
   const encodedHash = buildEncodedHash(hash, markdown, componentFiles)
   window.history.replaceState(
@@ -304,7 +302,6 @@ export function renderApp(options: RenderAppOptions = {}): RenderedApp {
       window.history.replaceState(null, '', window.location.pathname)
       resetRootStyles()
       _resetThemeForTesting()
-      clearComponentCache()
       document.querySelector('#slidev-custom-component-styles')?.remove()
     },
   }

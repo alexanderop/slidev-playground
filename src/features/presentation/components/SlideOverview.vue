@@ -5,7 +5,7 @@ import { slideDimensionsKey } from '../../../config/injection-keys'
 import SlideSurface from '../../../components/SlideSurface.vue'
 
 defineProps<{
-  slides: RenderedSlide[]
+  slides: readonly RenderedSlide[]
   currentSlide: number
 }>()
 

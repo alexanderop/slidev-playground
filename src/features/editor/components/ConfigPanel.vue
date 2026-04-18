@@ -35,7 +35,7 @@ const aspectRatio = useFrontmatterField('aspectRatio', {
   default: '16:9',
   parse: (raw) => {
     if (typeof raw !== 'number') {
-      return undefined
+      return
     }
     if (Math.abs(raw - 4 / 3) < 0.001) {
       return '4:3'
@@ -43,7 +43,7 @@ const aspectRatio = useFrontmatterField('aspectRatio', {
     if (Math.abs(raw - 1) < 0.001) {
       return '1:1'
     }
-    return undefined
+    return
   },
 })
 

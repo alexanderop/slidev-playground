@@ -20,7 +20,7 @@ const {
   showNotes,
   showGotoDialog,
 } = defineProps<{
-  slides: RenderedSlide[]
+  slides: readonly RenderedSlide[]
   currentSlide: number
   currentClick: number
   transitionName: string
