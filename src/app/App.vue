@@ -2,7 +2,7 @@
 import type { EditorView } from '@codemirror/view'
 import { parseSync } from '@slidev/parser'
 import { useFullscreen } from '@vueuse/core'
-import { computed, onMounted, onUnmounted, provide, ref, watchEffect } from 'vue'
+import { computed, provide, ref } from 'vue'
 
 import EditorLayout from '../features/editor/components/EditorLayout.vue'
 import PresentationOverlay from '../features/presentation/components/PresentationOverlay.vue'
@@ -15,7 +15,7 @@ import { useSlideDimensions } from '../composables/useSlideDimensions'
 import { useSlideScale } from '../composables/useSlideScale'
 import { useSplitPane } from '../composables/useSplitPane'
 import { useTheme } from '../composables/useTheme'
-import { useUrlSync } from '../composables/useUrlSync'
+import { usePlaygroundState } from './usePlaygroundState'
 import {
   componentFilesKey,
   currentSlideIndexKey,
@@ -29,11 +29,13 @@ import {
 import { defaultComponentFiles, defaultContent } from '../config/default-content'
 import { getOptionalRecord, getOptionalString } from '../utils/type-guards'
 import { resolveSlidesFromMarkdown } from '../features/slides/imports'
-import { compileCustomComponents, parseComponentFiles } from '../features/slides/custom-components'
 import { useSlideRenderer } from '../features/slides/render'
 
-const markdown = ref('')
-const componentFiles = ref<Record<string, string>>({})
+const playground = usePlaygroundState({
+  markdown: defaultContent,
+  componentFiles: defaultComponentFiles,
+})
+const { markdown, componentFiles, customComponents, share, copied } = playground
 provide(markdownKey, markdown)
 provide(componentFilesKey, componentFiles)
 
@@ -58,35 +60,11 @@ const { effectiveMode } = useTheme({
 
 useFontLoader(computed(() => config.value.fonts))
 
-const customComponents = computed(() => {
-  const parsedComponents = parseComponentFiles(componentFiles.value)
-  return compileCustomComponents(parsedComponents)
-})
-
 const renderedSlides = useSlideRenderer({
   slides: resolvedSlides,
   config,
   defaults,
-  customComponents: () => customComponents.value.components,
-})
-
-const { loadFromHash, share, copied } = useUrlSync(markdown, componentFiles, {
-  markdown: defaultContent,
-  componentFiles: defaultComponentFiles,
-})
-
-onMounted(() => {
-  const state = loadFromHash()
-  markdown.value = state.markdown
-  componentFiles.value = state.componentFiles
-
-  const customStyleTag = document.createElement('style')
-  customStyleTag.id = 'slidev-custom-component-styles'
-  document.head.append(customStyleTag)
-  watchEffect(() => {
-    customStyleTag.textContent = customComponents.value.styles
-  })
-  onUnmounted(() => customStyleTag.remove())
+  customComponents: () => customComponents.value,
 })
 
 function toggleRuntimeDarkMode() {

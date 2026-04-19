@@ -16,7 +16,7 @@ export function useCodeMirror(
   onChange: (value: string) => void,
 ) {
   const view = shallowRef<EditorView | null>(null)
-  let ignoreNextUpdate = false
+  let isApplyingExternal = false
 
   function setContent(value: string) {
     if (!view.value) {
@@ -26,9 +26,14 @@ export function useCodeMirror(
     if (current === value) {
       return
     }
-    view.value.dispatch({
-      changes: { from: 0, to: current.length, insert: value },
-    })
+    isApplyingExternal = true
+    try {
+      view.value.dispatch({
+        changes: { from: 0, to: current.length, insert: value },
+      })
+    } finally {
+      isApplyingExternal = false
+    }
   }
 
   function getContent(): string {
@@ -53,8 +58,7 @@ export function useCodeMirror(
         }),
         ...slideBoundaries,
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) {
-            ignoreNextUpdate = true
+          if (update.docChanged && !isApplyingExternal) {
             onChange(update.state.doc.toString())
           }
         }),
@@ -69,10 +73,6 @@ export function useCodeMirror(
   })
 
   watch(doc, (newVal) => {
-    if (ignoreNextUpdate) {
-      ignoreNextUpdate = false
-      return
-    }
     setContent(newVal)
   })
 

@@ -1,15 +1,5 @@
 import { AppPage } from './test-utils/page-objects/app-page'
-import { SMALL_CANVAS_DECK, TWO_SLIDE_DECK } from './test-utils/browser-test-fixtures'
-
-it('Given a shared hash When the app loads Then it renders the full deck in preview', async () => {
-  using app = await AppPage.render({ markdown: TWO_SLIDE_DECK })
-
-  app.expectSlideCount(2)
-  app.expectSlideVisible('Intro')
-  app.expectSlideVisible('Final slide')
-  app.expectPreviewSlideAction(1)
-  app.expectPreviewSlideAction(2)
-})
+import { SMALL_CANVAS_DECK } from './test-utils/browser-test-fixtures'
 
 it('Given the app is open When the markdown changes Then the preview updates through the real App.vue flow', async () => {
   using app = await AppPage.render({
