@@ -159,8 +159,9 @@ function buildEnumField<T extends string>(
   path: string,
   schema: EnumSchema<T>,
 ): WritableComputedRef<T> {
+  const allowedValues: readonly string[] = schema.values
   const isAllowed = (value: unknown): value is T =>
-    typeof value === 'string' && (schema.values as readonly string[]).includes(value)
+    typeof value === 'string' && allowedValues.includes(value)
 
   return computed<T>({
     get: () => {

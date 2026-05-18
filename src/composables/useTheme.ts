@@ -6,6 +6,10 @@ type Mode = 'light' | 'dark'
 
 let initialized = false
 
+function toMode(value: string | undefined): Mode | undefined {
+  return value === 'dark' || value === 'light' ? value : undefined
+}
+
 export type ThemeOptions = {
   frontmatterPrimary?: Ref<string | undefined>
   frontmatterColorSchema?: Ref<string | undefined>
@@ -19,20 +23,18 @@ export function useTheme(options: ThemeOptions = {}) {
   const prefersDark = usePreferredDark()
 
   const effectiveMode = computed<Mode>(() => {
-    const runtime = runtimeColorSchema?.value ?? 'auto'
-    if (runtime === 'dark' || runtime === 'light') {
+    const runtime = toMode(runtimeColorSchema?.value)
+    if (runtime) {
       return runtime
     }
-
-    const fm = frontmatterColorSchema?.value
-    if (fm === 'dark' || fm === 'light') {
+    const fm = toMode(frontmatterColorSchema?.value)
+    if (fm) {
       return fm
     }
-
-    if ((fm ?? 'auto') === 'auto') {
+    const fallback = frontmatterColorSchema?.value ?? 'auto'
+    if (fallback === 'auto') {
       return prefersDark.value ? 'dark' : 'light'
     }
-
     return 'light'
   })
 
@@ -44,31 +46,10 @@ export function useTheme(options: ThemeOptions = {}) {
     watchEffect(() => {
       const root = document.documentElement
       root.classList.toggle('dark', effectiveMode.value === 'dark')
-
-      const primary = frontmatterPrimary?.value ?? '#4fc08d'
-      root.style.setProperty('--slidev-theme-primary', primary)
-      root.style.setProperty('--theme-accent', hexToOklch(primary))
-
-      // Apply contrast from themeConfig
+      applyPrimary(root, frontmatterPrimary?.value)
       const config = themeConfig?.value ?? {}
-      const contrast = Number(config.contrast)
-      if (Number.isFinite(contrast) && contrast >= 30 && contrast <= 100) {
-        root.style.setProperty('--theme-contrast', String(contrast))
-      }
-
-      // Apply all themeConfig entries as CSS vars
-      const currentKeys = Object.keys(config).filter((k) => k !== 'primary' && k !== 'contrast')
-      for (const key of currentKeys) {
-        root.style.setProperty(`--slidev-theme-${key}`, String(config[key]))
-      }
-
-      // Clean up removed keys
-      for (const key of previousThemeKeys) {
-        if (!currentKeys.includes(key)) {
-          root.style.removeProperty(`--slidev-theme-${key}`)
-        }
-      }
-      previousThemeKeys = currentKeys
+      applyContrast(root, Number(config.contrast))
+      previousThemeKeys = applyThemeConfig(root, config, previousThemeKeys)
     })
   }
 
@@ -78,6 +59,35 @@ export function useTheme(options: ThemeOptions = {}) {
 /** @internal Reset module state for testing */
 export function _resetThemeForTesting() {
   initialized = false
+}
+
+function applyPrimary(root: HTMLElement, primary: string | undefined) {
+  const value = primary ?? '#4fc08d'
+  root.style.setProperty('--slidev-theme-primary', value)
+  root.style.setProperty('--theme-accent', hexToOklch(value))
+}
+
+function applyContrast(root: HTMLElement, contrast: number) {
+  if (Number.isFinite(contrast) && contrast >= 30 && contrast <= 100) {
+    root.style.setProperty('--theme-contrast', String(contrast))
+  }
+}
+
+function applyThemeConfig(
+  root: HTMLElement,
+  config: Record<string, unknown>,
+  previousKeys: readonly string[],
+): readonly string[] {
+  const currentKeys = Object.keys(config).filter((k) => k !== 'primary' && k !== 'contrast')
+  for (const key of currentKeys) {
+    root.style.setProperty(`--slidev-theme-${key}`, String(config[key]))
+  }
+  for (const key of previousKeys) {
+    if (!currentKeys.includes(key)) {
+      root.style.removeProperty(`--slidev-theme-${key}`)
+    }
+  }
+  return currentKeys
 }
 
 /**

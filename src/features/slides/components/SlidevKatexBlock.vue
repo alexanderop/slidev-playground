@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, ref, watchEffect } from 'vue'
+import { computed, inject, onMounted, ref, useTemplateRef, watchEffect } from 'vue'
 import { presentationClickKey } from '../../../config/injection-keys'
 import { tryRun } from '../../../utils/try-run'
 
@@ -7,7 +7,11 @@ const { ranges } = defineProps<{
   ranges: string
 }>()
 
-const el = ref<HTMLDivElement>()
+defineSlots<{
+  default?: () => unknown
+}>()
+
+const el = useTemplateRef<HTMLDivElement>('el')
 const currentClick = inject(presentationClickKey, ref(0))
 
 const parsedRanges = computed<string[]>(() => {

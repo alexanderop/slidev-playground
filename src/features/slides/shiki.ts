@@ -35,6 +35,43 @@ export function getShikiHighlighter(): Promise<Highlighter> {
   return highlighterPromise
 }
 
+type HighlightSet = 'all' | Set<number>
+
+function resolveHighlights(value: number[] | 'all' | undefined): HighlightSet {
+  return value === 'all' ? 'all' : new Set(value ?? [])
+}
+
+function hasAnyHighlight(set: HighlightSet): boolean {
+  return set === 'all' || set.size > 0
+}
+
+function isLineHighlighted(set: HighlightSet, lineNumber: number): boolean {
+  return set === 'all' || set.has(lineNumber)
+}
+
+function decorateLine(
+  line: Element,
+  options: {
+    relativeLineNumber: number
+    absoluteLineNumber: number
+    showLineNumbers: boolean
+    highlights: HighlightSet
+    anyHighlight: boolean
+  },
+) {
+  if (options.showLineNumbers && line instanceof HTMLElement) {
+    line.dataset.line = String(options.absoluteLineNumber)
+  }
+  const isHighlighted = isLineHighlighted(options.highlights, options.relativeLineNumber)
+  if (isHighlighted) {
+    line.classList.add('highlighted')
+    return
+  }
+  if (options.anyHighlight) {
+    line.classList.add('dishonored')
+  }
+}
+
 export async function getCodeBlockHtml(
   code: string,
   language: string,
@@ -58,27 +95,19 @@ export async function getCodeBlockHtml(
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, 'text/html')
   const lineElements = [...doc.querySelectorAll('.line')]
-  const highlightedLineSet =
-    options.highlightedLines === 'all' ? 'all' : new Set(options.highlightedLines ?? [])
+  const highlights = resolveHighlights(options.highlightedLines)
+  const anyHighlight = hasAnyHighlight(highlights)
   const startLine = options.startLine ?? 1
-
-  const hasHighlights =
-    highlightedLineSet === 'all' ||
-    (highlightedLineSet instanceof Set && highlightedLineSet.size > 0)
+  const showLineNumbers = options.lineNumbers === true
 
   for (const [index, line] of lineElements.entries()) {
-    const lineNumber = startLine + index
-    const relativeLineNumber = index + 1
-    if (options.lineNumbers === true && line instanceof HTMLElement) {
-      line.dataset.line = String(lineNumber)
-    }
-    const isHighlighted = highlightedLineSet === 'all' || highlightedLineSet.has(relativeLineNumber)
-    if (isHighlighted) {
-      line.classList.add('highlighted')
-    }
-    if (!isHighlighted && hasHighlights) {
-      line.classList.add('dishonored')
-    }
+    decorateLine(line, {
+      relativeLineNumber: index + 1,
+      absoluteLineNumber: startLine + index,
+      showLineNumbers,
+      highlights,
+      anyHighlight,
+    })
   }
 
   // Remove Shiki's inline background-color on <pre> so our CSS variable takes over

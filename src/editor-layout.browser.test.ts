@@ -44,7 +44,9 @@ it('Given the split pane When the user drags the divider Then the editor pane wi
   divider.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
   window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 200 }))
   window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  await new Promise((resolve) => {
+    setTimeout(resolve, 50)
+  })
 
   expect(editorPane.style.width).not.toBe(startWidth)
 })

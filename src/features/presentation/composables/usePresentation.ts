@@ -163,150 +163,178 @@ export function usePresentation(
     await toggleFullscreen()
   }
 
+  type NavigationAction = (event: KeyboardEvent) => void
+  const NAVIGATION_ACTIONS: Record<string, NavigationAction> = {
+    ' ': (event) => {
+      if (event.shiftKey) {
+        prev()
+        return
+      }
+      next()
+    },
+    ArrowRight: (event) => {
+      if (event.shiftKey) {
+        nextSlide()
+        return
+      }
+      next()
+    },
+    ArrowLeft: (event) => {
+      if (event.shiftKey) {
+        prevSlide()
+        return
+      }
+      prev()
+    },
+    ArrowDown: () => {
+      nextSlide()
+    },
+    ArrowUp: () => {
+      prevSlide()
+    },
+    PageDown: () => {
+      next()
+    },
+    PageUp: () => {
+      prev()
+    },
+  }
+
+  function handleOverviewKey(event: KeyboardEvent): true {
+    event.preventDefault()
+    if (!presenting.value) {
+      startWithDialog('overview')
+      return true
+    }
+    showOverview.value = !showOverview.value
+    showGotoDialog.value = false
+    return true
+  }
+
+  function handleGotoKey(event: KeyboardEvent): true {
+    event.preventDefault()
+    if (!presenting.value) {
+      startWithDialog('goto')
+      return true
+    }
+    showGotoDialog.value = !showGotoDialog.value
+    showOverview.value = false
+    return true
+  }
+
+  function handlePresentKey(event: KeyboardEvent): true {
+    event.preventDefault()
+    if (presenting.value) {
+      stop()
+      return true
+    }
+    start(0)
+    return true
+  }
+
+  function handleFullscreenKey(event: KeyboardEvent): boolean {
+    if (!presenting.value) {
+      return true
+    }
+    event.preventDefault()
+    if (!event.repeat) {
+      void tryToggleFullscreen()
+    }
+    return true
+  }
+
+  function handleDialogToggleKey(event: KeyboardEvent): boolean {
+    const key = event.key
+    if (key === '?') {
+      event.preventDefault()
+      showShortcutsDialog.value = !showShortcutsDialog.value
+      return true
+    }
+    if (key === 'Escape' && showShortcutsDialog.value) {
+      event.preventDefault()
+      showShortcutsDialog.value = false
+      return true
+    }
+    return false
+  }
+
+  function handleGlobalKey(event: KeyboardEvent): boolean {
+    const key = event.key
+    const lower = key.toLowerCase()
+    if (lower === 'o' || key === '`') {
+      return handleOverviewKey(event)
+    }
+    if (lower === 'd') {
+      event.preventDefault()
+      toggleDark?.()
+      return true
+    }
+    if (lower === 'g') {
+      return handleGotoKey(event)
+    }
+    if (lower === 'p') {
+      return handlePresentKey(event)
+    }
+    if (handleDialogToggleKey(event)) {
+      return true
+    }
+    if (lower === 'f') {
+      return handleFullscreenKey(event)
+    }
+    return false
+  }
+
+  function handleEscapeInPresentation(event: KeyboardEvent): true {
+    event.preventDefault()
+    if (showShortcutsDialog.value) {
+      showShortcutsDialog.value = false
+      return true
+    }
+    if (showGotoDialog.value) {
+      showGotoDialog.value = false
+      return true
+    }
+    if (showOverview.value) {
+      showOverview.value = false
+      return true
+    }
+    stop()
+    return true
+  }
+
+  function handlePresentationKey(event: KeyboardEvent): void {
+    const key = event.key
+    if (key === 'Escape') {
+      handleEscapeInPresentation(event)
+      return
+    }
+    if (key.toLowerCase() === 'n') {
+      event.preventDefault()
+      showNotes.value = !showNotes.value
+      return
+    }
+    if (showGotoDialog.value || showOverview.value || showShortcutsDialog.value) {
+      return
+    }
+    const action = NAVIGATION_ACTIONS[key]
+    if (action !== undefined) {
+      event.preventDefault()
+      action(event)
+    }
+  }
+
   if (typeof window !== 'undefined') {
     useEventListener(window, 'keydown', (event: KeyboardEvent) => {
       if (isShortcutBlocked()) {
         return
       }
-
-      const key = event.key
-      const lower = key.toLowerCase()
-
-      if (lower === 'o' || key === '`') {
-        event.preventDefault()
-        if (!presenting.value) {
-          startWithDialog('overview')
-          return
-        }
-        showOverview.value = !showOverview.value
-        showGotoDialog.value = false
+      if (handleGlobalKey(event)) {
         return
       }
-
-      if (lower === 'd') {
-        event.preventDefault()
-        toggleDark?.()
-        return
-      }
-
-      if (lower === 'g') {
-        event.preventDefault()
-        if (!presenting.value) {
-          startWithDialog('goto')
-          return
-        }
-        showGotoDialog.value = !showGotoDialog.value
-        showOverview.value = false
-        return
-      }
-
-      if (lower === 'p') {
-        event.preventDefault()
-        if (presenting.value) {
-          stop()
-          return
-        }
-        start(0)
-        return
-      }
-
-      if (key === '?') {
-        event.preventDefault()
-        showShortcutsDialog.value = !showShortcutsDialog.value
-        return
-      }
-
-      if (key === 'Escape' && showShortcutsDialog.value) {
-        event.preventDefault()
-        showShortcutsDialog.value = false
-        return
-      }
-
-      if (lower === 'f') {
-        if (!presenting.value) {
-          return
-        }
-        event.preventDefault()
-        if (!event.repeat) {
-          void tryToggleFullscreen()
-        }
-        return
-      }
-
       if (!presenting.value) {
         return
       }
-
-      if (key === 'Escape') {
-        event.preventDefault()
-        if (showShortcutsDialog.value) {
-          showShortcutsDialog.value = false
-          return
-        }
-        if (showGotoDialog.value) {
-          showGotoDialog.value = false
-          return
-        }
-        if (showOverview.value) {
-          showOverview.value = false
-          return
-        }
-        stop()
-        return
-      }
-
-      if (lower === 'n') {
-        event.preventDefault()
-        showNotes.value = !showNotes.value
-        return
-      }
-
-      if (showGotoDialog.value || showOverview.value || showShortcutsDialog.value) {
-        return
-      }
-
-      switch (key) {
-        case ' ':
-          event.preventDefault()
-          if (event.shiftKey) {
-            prev()
-            break
-          }
-          next()
-          break
-        case 'ArrowRight':
-          event.preventDefault()
-          if (event.shiftKey) {
-            nextSlide()
-            break
-          }
-          next()
-          break
-        case 'ArrowLeft':
-          event.preventDefault()
-          if (event.shiftKey) {
-            prevSlide()
-            break
-          }
-          prev()
-          break
-        case 'ArrowDown':
-          event.preventDefault()
-          nextSlide()
-          break
-        case 'ArrowUp':
-          event.preventDefault()
-          prevSlide()
-          break
-        case 'PageDown':
-          event.preventDefault()
-          next()
-          break
-        case 'PageUp':
-          event.preventDefault()
-          prev()
-          break
-      }
+      handlePresentationKey(event)
     })
   }
 

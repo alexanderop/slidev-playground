@@ -13,39 +13,51 @@ function isAllHighlightStep(step: FenceHighlightStep): step is ['all'] {
   return step[0] === 'all'
 }
 
+type MetaSettings = {
+  lineNumbers: boolean | null
+  startLine: number | null
+}
+
+function applyMetaPart(part: string, settings: MetaSettings) {
+  const trimmed = part.trim()
+  if (trimmed === 'lines:true' || trimmed === 'lineNumbers:true') {
+    settings.lineNumbers = true
+    return
+  }
+  if (trimmed === 'lines:false' || trimmed === 'lineNumbers:false') {
+    settings.lineNumbers = false
+    return
+  }
+  if (trimmed.startsWith('startLine:')) {
+    const value = Number.parseInt(trimmed.slice('startLine:'.length), 10)
+    settings.startLine = Number.isFinite(value) && value > 0 ? value : null
+  }
+}
+
+function parseStepList(meta: string): FenceHighlightStep[] {
+  return meta
+    .split('|')
+    .map((step) => parseHighlightToken(step.trim()))
+    .filter((step): step is FenceHighlightStep => step !== null)
+}
+
 export function parseFenceInfo(info: string): ParsedFenceInfo {
   const trimmed = info.trim()
   const language = trimmed.split(/\s+/)[0] ?? ''
   const filenameMatch = trimmed.match(/\[([^\]]+)\]/)
   const metaBlocks = [...trimmed.matchAll(/\{([^}]+)\}/g)].map((match) => match[1].trim())
 
-  let lineNumbers: boolean | null = null
+  const settings: MetaSettings = { lineNumbers: null, startLine: null }
   const highlightedLines: number[] = []
   let highlightSteps: FenceHighlightStep[] = []
-  let startLine: number | null = null
 
   for (const meta of metaBlocks) {
     for (const part of meta.split(',')) {
-      const trimmedPart = part.trim()
-      if (trimmedPart === 'lines:true' || trimmedPart === 'lineNumbers:true') {
-        lineNumbers = true
-        continue
-      }
-      if (trimmedPart === 'lines:false' || trimmedPart === 'lineNumbers:false') {
-        lineNumbers = false
-        continue
-      }
-      if (trimmedPart.startsWith('startLine:')) {
-        const value = Number.parseInt(trimmedPart.slice('startLine:'.length), 10)
-        startLine = Number.isFinite(value) && value > 0 ? value : null
-      }
+      applyMetaPart(part, settings)
     }
 
     if (meta.includes('|')) {
-      highlightSteps = meta
-        .split('|')
-        .map((step) => parseHighlightToken(step.trim()))
-        .filter((step): step is FenceHighlightStep => step !== null)
+      highlightSteps = parseStepList(meta)
       continue
     }
 
@@ -53,7 +65,6 @@ export function parseFenceInfo(info: string): ParsedFenceInfo {
     if (parsedHighlight === null) {
       continue
     }
-
     if (isAllHighlightStep(parsedHighlight)) {
       highlightSteps = [['all']]
       continue
@@ -66,8 +77,8 @@ export function parseFenceInfo(info: string): ParsedFenceInfo {
     highlightSteps,
     highlightedLines,
     language,
-    lineNumbers,
-    startLine,
+    lineNumbers: settings.lineNumbers,
+    startLine: settings.startLine,
   }
 }
 

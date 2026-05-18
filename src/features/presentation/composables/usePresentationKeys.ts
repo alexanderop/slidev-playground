@@ -49,60 +49,82 @@ function startWithDialog(api: PresentationApi, type: 'overview' | 'goto') {
   api.showOverview.value = false
 }
 
-function handleGlobalShortcuts(event: KeyboardEvent, ctx: GlobalHandlerContext): boolean {
-  const { api, toggleDark, tryToggleFullscreen } = ctx
-  const key = event.key
-  const lower = key.toLowerCase()
-
-  if (lower === 'o' || key === '`') {
-    event.preventDefault()
-    if (!api.presenting.value) {
-      startWithDialog(api, 'overview')
-      return true
-    }
+function toggleDialog(api: PresentationApi, type: 'overview' | 'goto'): void {
+  if (!api.presenting.value) {
+    startWithDialog(api, type)
+    return
+  }
+  if (type === 'overview') {
     api.showOverview.value = !api.showOverview.value
     api.showGotoDialog.value = false
+    return
+  }
+  api.showGotoDialog.value = !api.showGotoDialog.value
+  api.showOverview.value = false
+}
+
+function handleOverviewShortcut(api: PresentationApi): boolean {
+  toggleDialog(api, 'overview')
+  return true
+}
+
+function handleGotoShortcut(api: PresentationApi): boolean {
+  toggleDialog(api, 'goto')
+  return true
+}
+
+function handleDarkShortcut(toggleDark?: () => void): boolean {
+  toggleDark?.()
+  return true
+}
+
+function handlePresentShortcut(api: PresentationApi): boolean {
+  if (api.presenting.value) {
+    api.stop()
     return true
   }
+  api.start(0)
+  return true
+}
 
+function handleFullscreenShortcut(
+  event: KeyboardEvent,
+  api: PresentationApi,
+  tryToggleFullscreen: () => Promise<void>,
+): boolean {
+  if (!api.presenting.value) {
+    return false
+  }
+  event.preventDefault()
+  if (!event.repeat) {
+    void tryToggleFullscreen()
+  }
+  return true
+}
+
+function handleGlobalShortcuts(event: KeyboardEvent, ctx: GlobalHandlerContext): boolean {
+  const { api, toggleDark, tryToggleFullscreen } = ctx
+  const lower = event.key.toLowerCase()
+
+  if (lower === 'o' || event.key === '`') {
+    event.preventDefault()
+    return handleOverviewShortcut(api)
+  }
   if (lower === 'd') {
     event.preventDefault()
-    toggleDark?.()
-    return true
+    return handleDarkShortcut(toggleDark)
   }
-
   if (lower === 'g') {
     event.preventDefault()
-    if (!api.presenting.value) {
-      startWithDialog(api, 'goto')
-      return true
-    }
-    api.showGotoDialog.value = !api.showGotoDialog.value
-    api.showOverview.value = false
-    return true
+    return handleGotoShortcut(api)
   }
-
   if (lower === 'p') {
     event.preventDefault()
-    if (api.presenting.value) {
-      api.stop()
-      return true
-    }
-    api.start(0)
-    return true
+    return handlePresentShortcut(api)
   }
-
   if (lower === 'f') {
-    if (!api.presenting.value) {
-      return false
-    }
-    event.preventDefault()
-    if (!event.repeat) {
-      void tryToggleFullscreen()
-    }
-    return true
+    return handleFullscreenShortcut(event, api, tryToggleFullscreen)
   }
-
   return false
 }
 
@@ -133,51 +155,52 @@ function handleDialogShortcuts(event: KeyboardEvent, api: PresentationApi): bool
   return false
 }
 
-function handleNavigationKey(event: KeyboardEvent, api: PresentationApi): boolean {
-  switch (event.key) {
-    case ' ':
-      event.preventDefault()
-      if (event.shiftKey) {
-        api.prev()
-        return true
-      }
-      api.next()
-      return true
-    case 'ArrowRight':
-      event.preventDefault()
-      if (event.shiftKey) {
-        api.nextSlide()
-        return true
-      }
-      api.next()
-      return true
-    case 'ArrowLeft':
-      event.preventDefault()
-      if (event.shiftKey) {
-        api.prevSlide()
-        return true
-      }
+type NavigationAction = (api: PresentationApi, event: KeyboardEvent) => void
+
+const NAVIGATION_ACTIONS: Record<string, NavigationAction> = {
+  ' ': (api, event) => {
+    if (event.shiftKey) {
       api.prev()
-      return true
-    case 'ArrowDown':
-      event.preventDefault()
+      return
+    }
+    api.next()
+  },
+  ArrowRight: (api, event) => {
+    if (event.shiftKey) {
       api.nextSlide()
-      return true
-    case 'ArrowUp':
-      event.preventDefault()
+      return
+    }
+    api.next()
+  },
+  ArrowLeft: (api, event) => {
+    if (event.shiftKey) {
       api.prevSlide()
-      return true
-    case 'PageDown':
-      event.preventDefault()
-      api.next()
-      return true
-    case 'PageUp':
-      event.preventDefault()
-      api.prev()
-      return true
-    default:
-      return false
+      return
+    }
+    api.prev()
+  },
+  ArrowDown: (api) => {
+    api.nextSlide()
+  },
+  ArrowUp: (api) => {
+    api.prevSlide()
+  },
+  PageDown: (api) => {
+    api.next()
+  },
+  PageUp: (api) => {
+    api.prev()
+  },
+}
+
+function handleNavigationKey(event: KeyboardEvent, api: PresentationApi): boolean {
+  const action = NAVIGATION_ACTIONS[event.key]
+  if (action === undefined) {
+    return false
   }
+  event.preventDefault()
+  action(api, event)
+  return true
 }
 
 export function usePresentationKeys(api: PresentationApi, options: PresentationKeyOptions = {}) {

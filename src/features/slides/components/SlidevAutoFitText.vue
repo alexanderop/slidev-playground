@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 
 const { max = 100, min = 30 } = defineProps<{
   max?: number
   min?: number
 }>()
 
-const container = ref<HTMLDivElement>()
-const inner = ref<HTMLDivElement>()
+defineSlots<{
+  default?: () => unknown
+}>()
+
+const container = useTemplateRef<HTMLDivElement>('container')
+const inner = useTemplateRef<HTMLDivElement>('inner')
 const size = ref(100)
 const fontSize = computed(() => `${size.value}px`)
 
@@ -17,6 +21,18 @@ const innerSize = useElementSize(inner)
 
 const wrapLen = ref(0)
 const wrap = ref('nowrap')
+
+function updateWrap(newSize: number): void {
+  const innerLength = inner.value?.textContent?.length ?? 0
+  if (newSize < min) {
+    wrapLen.value = innerLength
+    wrap.value = ''
+    return
+  }
+  if (innerLength < wrapLen.value) {
+    wrap.value = 'nowrap'
+  }
+}
 
 watch([container, containerSize.width, innerSize.width], () => {
   if (!container.value || innerSize.width.value <= 0) {
@@ -27,23 +43,16 @@ watch([container, containerSize.width, innerSize.width], () => {
     return
   }
 
-  let newSize = size.value * ratio
-  if (newSize < min) {
-    wrapLen.value = inner.value?.textContent?.length ?? 0
-    wrap.value = ''
-  }
-  if (newSize >= min && (inner.value?.textContent?.length ?? 0) < wrapLen.value) {
-    wrap.value = 'nowrap'
-  }
-  newSize = Math.max(min, Math.min(max, newSize))
-  size.value = newSize
+  const projected = size.value * ratio
+  updateWrap(projected)
+  size.value = Math.max(min, Math.min(max, projected))
 })
 </script>
 
 <template>
   <div ref="container" class="slidev-auto-fit-text">
     <div ref="inner" class="slidev-auto-fit-text-inner">
-      <slot />
+      <slot></slot>
     </div>
   </div>
 </template>

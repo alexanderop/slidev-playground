@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
-import { ref, toRef, watch } from 'vue'
+import { toRef, useTemplateRef, watch } from 'vue'
 import { useCodeMirror } from '../composables/useCodeMirror'
 
 const { modelValue } = defineProps<{
@@ -12,7 +12,7 @@ const emit = defineEmits<{
 }>()
 
 const editorView = defineModel<EditorView | null>('editorView', { required: true })
-const editorContainer = ref<HTMLElement | null>(null)
+const editorContainer = useTemplateRef<HTMLElement>('editorContainer')
 
 const { view } = useCodeMirror(
   editorContainer,

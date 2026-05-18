@@ -113,46 +113,59 @@ export function normalizeDeckPath(path: string, fromFilepath: string): string {
   return resolvedParts.join('/') || '/'
 }
 
+type SnippetMatch = {
+  trimmedPath: string
+  region: string
+  explicitLanguage: string
+  rawMeta: string
+}
+
+function parseSnippetMatch(match: RegExpMatchArray): SnippetMatch {
+  const [, rawPath, regionWithHash = '', explicitLanguage = '', rawMeta = ''] = match
+  const [pathWithoutRegion] = rawPath.split('#')
+  return {
+    trimmedPath: pathWithoutRegion.trim(),
+    region: regionWithHash.startsWith('#') ? regionWithHash.slice(1) : '',
+    explicitLanguage: explicitLanguage.trim(),
+    rawMeta: rawMeta.trim(),
+  }
+}
+
+function formatSnippet(language: string, meta: string, snippet: string): string {
+  return [`\`\`\`${language}${meta ? ` ${meta}` : ''}`, snippet.replace(/\n$/, ''), '```'].join(
+    '\n',
+  )
+}
+
+function resolveSnippetLine(line: string, fromFilepath: string): string {
+  const match = line.match(SNIPPET_IMPORT_RE)
+  if (!match) {
+    return line
+  }
+  const { trimmedPath, region, explicitLanguage, rawMeta } = parseSnippetMatch(match)
+  const fileContents = readProjectFile(normalizeDeckPath(trimmedPath, fromFilepath))
+
+  if (fileContents === undefined) {
+    return buildErrorComponent(
+      `Unable to resolve snippet import "${trimmedPath}" from ${fromFilepath}.`,
+    )
+  }
+
+  const snippet = region ? extractRegion(fileContents, region) : fileContents
+  if (snippet === null) {
+    return buildErrorComponent(`Region "${region}" was not found in "${trimmedPath}".`)
+  }
+
+  const language =
+    explicitLanguage === '' ? (inferLanguageFromPath(trimmedPath) ?? 'text') : explicitLanguage
+  return formatSnippet(language, rawMeta, snippet)
+}
+
 export function resolveSnippetImports(content: string, fromFilepath: string): string {
   const normalizedFromFilepath = normalizeDeckPath(fromFilepath, '/')
-
   return content
     .split('\n')
-    .map((line) => {
-      const match = line.match(SNIPPET_IMPORT_RE)
-      if (!match) {
-        return line
-      }
-
-      const [, rawPath, regionWithHash = '', explicitLanguage = '', rawMeta = ''] = match
-      const [pathWithoutRegion] = rawPath.split('#')
-      const region = regionWithHash.startsWith('#') ? regionWithHash.slice(1) : ''
-      const resolvedPath = normalizeDeckPath(pathWithoutRegion.trim(), normalizedFromFilepath)
-      const fileContents = readProjectFile(resolvedPath)
-
-      if (fileContents === undefined) {
-        return buildErrorComponent(
-          `Unable to resolve snippet import "${pathWithoutRegion.trim()}" from ${normalizedFromFilepath}.`,
-        )
-      }
-
-      const snippet = region ? extractRegion(fileContents, region) : fileContents
-      if (snippet === null) {
-        return buildErrorComponent(
-          `Region "${region}" was not found in "${pathWithoutRegion.trim()}".`,
-        )
-      }
-
-      const explicitLanguageValue = explicitLanguage.trim()
-      const inferredLanguage = inferLanguageFromPath(pathWithoutRegion.trim())
-      const language =
-        explicitLanguageValue === '' ? (inferredLanguage ?? 'text') : explicitLanguageValue
-      const meta = rawMeta.trim()
-
-      return [`\`\`\`${language}${meta ? ` ${meta}` : ''}`, snippet.replace(/\n$/, ''), '```'].join(
-        '\n',
-      )
-    })
+    .map((line) => resolveSnippetLine(line, normalizedFromFilepath))
     .join('\n')
 }
 

@@ -5,9 +5,10 @@ import type {
   RoughAnnotationType,
 } from '@slidev/rough-notation'
 import { annotate } from '@slidev/rough-notation'
-import { inject, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { inject, onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { presentationClickKey } from '../../../config/injection-keys'
 
+/* eslint-disable vue/require-default-prop -- optional props passed through to rough-notation, which supplies its own defaults */
 const {
   type = 'underline',
   color,
@@ -25,10 +26,15 @@ const {
   padding?: number
   iterations?: number
 }>()
+/* eslint-enable vue/require-default-prop */
+
+defineSlots<{
+  default?: () => unknown
+}>()
 
 const DEFAULT_ANIMATION_MS = 800
 
-const contentRef = ref<HTMLElement | null>(null)
+const contentRef = useTemplateRef<HTMLElement>('contentRef')
 const annotation = shallowRef<RoughAnnotation | null>(null)
 const currentClick = inject(presentationClickKey, null)
 
@@ -36,12 +42,8 @@ function resolveClickStep(): number | undefined {
   return at === undefined ? undefined : Number(at)
 }
 
-onMounted(() => {
-  if (!contentRef.value) {
-    return
-  }
-
-  const config: RoughAnnotationConfig = {
+function buildConfig(): RoughAnnotationConfig {
+  return {
     type,
     animate: true,
     ...(color !== undefined && { color }),
@@ -50,9 +52,14 @@ onMounted(() => {
     ...(padding !== undefined && { padding }),
     ...(iterations !== undefined && { iterations }),
   }
+}
 
-  annotation.value = annotate(contentRef.value, config)
+onMounted(() => {
+  if (!contentRef.value) {
+    return
+  }
 
+  annotation.value = annotate(contentRef.value, buildConfig())
   const clickStep = resolveClickStep()
 
   if (clickStep === undefined || currentClick === null) {

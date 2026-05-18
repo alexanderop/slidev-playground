@@ -2,17 +2,100 @@ import type { Component, PropType, VNode } from 'vue'
 import { computed, defineComponent, h } from 'vue'
 import type { RenderedSlide } from '../types'
 
-function renderSlotComponent(component?: Component): (() => VNode | null) | undefined {
+type SlotRenderer = (() => VNode | null) | undefined
+type SlotMap = Record<string, SlotRenderer>
+type LayoutContext = {
+  className: unknown[]
+  slots: SlotMap
+  imageStyle: Record<string, string> | undefined
+  iframeUrl: string | null
+}
+type LayoutRenderer = (ctx: LayoutContext) => VNode
+
+function renderSlotComponent(component?: Component): SlotRenderer {
   if (!component) {
     return undefined
   }
   return () => h(component)
 }
 
+function renderIframe(url: string): VNode {
+  return h('iframe', {
+    class: 'slidev-layout-iframe-frame',
+    src: url,
+    title: 'Embedded slide content',
+  })
+}
+
+const defaultSection: LayoutRenderer = ({ className, slots }) =>
+  h('section', { class: className }, [slots.default?.()])
+
+const layoutRenderers: Record<string, LayoutRenderer> = {
+  cover: defaultSection,
+  center: defaultSection,
+  section: defaultSection,
+  statement: defaultSection,
+  fact: defaultSection,
+  intro: defaultSection,
+  end: defaultSection,
+  '404': defaultSection,
+  error: defaultSection,
+  full: defaultSection,
+  none: defaultSection,
+  quote: ({ className, slots }) =>
+    h('section', { class: className }, [h('blockquote', [slots.default?.()])]),
+  'two-cols': ({ className, slots }) =>
+    h('section', { class: className }, [
+      h('div', { class: 'slidev-layout-main' }, [slots.default?.()]),
+      h('div', { class: 'slidev-layout-side' }, [slots.right?.()]),
+    ]),
+  'two-cols-header': ({ className, slots }) =>
+    h('section', { class: className }, [
+      h('header', { class: 'slidev-layout-header' }, [slots.header?.()]),
+      h('div', { class: 'slidev-layout-body' }, [
+        h('div', { class: 'slidev-layout-main' }, [slots.default?.()]),
+        h('div', { class: 'slidev-layout-side' }, [slots.right?.()]),
+      ]),
+    ]),
+  image: ({ className, slots, imageStyle }) =>
+    h('section', { class: className }, [
+      h('div', {
+        class: 'slidev-layout-image slidev-layout-image-full',
+        style: imageStyle,
+      }),
+      h('div', { class: 'slidev-layout-image-content' }, [slots.default?.()]),
+    ]),
+  'image-left': ({ className, slots, imageStyle }) =>
+    h('section', { class: className }, [
+      h('div', { class: 'slidev-layout-image', style: imageStyle }),
+      h('div', { class: 'slidev-layout-image-content' }, [slots.default?.()]),
+    ]),
+  'image-right': ({ className, slots, imageStyle }) =>
+    h('section', { class: className }, [
+      h('div', { class: 'slidev-layout-image-content' }, [slots.default?.()]),
+      h('div', { class: 'slidev-layout-image', style: imageStyle }),
+    ]),
+  iframe: ({ className, slots, iframeUrl }) =>
+    h('section', { class: className }, [
+      iframeUrl === null ? slots.default?.() : renderIframe(iframeUrl),
+    ]),
+  'iframe-left': ({ className, slots, iframeUrl }) =>
+    h('section', { class: className }, [
+      iframeUrl === null ? null : renderIframe(iframeUrl),
+      h('div', { class: 'slidev-layout-iframe-content' }, [slots.default?.()]),
+    ]),
+  'iframe-right': ({ className, slots, iframeUrl }) =>
+    h('section', { class: className }, [
+      h('div', { class: 'slidev-layout-iframe-content' }, [slots.default?.()]),
+      iframeUrl === null ? null : renderIframe(iframeUrl),
+    ]),
+}
+
 export default defineComponent({
   name: 'SlideLayoutHost',
   props: {
     slide: {
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       type: Object as PropType<RenderedSlide>,
       required: true,
     },
@@ -29,98 +112,22 @@ export default defineComponent({
     })
 
     return () => {
-      const slots = Object.fromEntries(
+      const slots: SlotMap = Object.fromEntries(
         Object.entries(props.slide.slotComponents).map(([name, component]) => [
           name,
           renderSlotComponent(component),
         ]),
       )
 
-      const className = ['slidev-layout', `slidev-layout-${layoutName.value}`, props.slide.class]
-
-      switch (layoutName.value) {
-        case 'cover':
-        case 'center':
-        case 'section':
-        case 'statement':
-        case 'fact':
-          return h('section', { class: className }, [slots.default?.()])
-        case 'quote':
-          return h('section', { class: className }, [h('blockquote', [slots.default?.()])])
-        case 'intro':
-        case 'end':
-        case '404':
-        case 'error':
-          return h('section', { class: className }, [slots.default?.()])
-        case 'full':
-        case 'none':
-          return h('section', { class: className }, [slots.default?.()])
-        case 'two-cols':
-          return h('section', { class: className }, [
-            h('div', { class: 'slidev-layout-main' }, [slots.default?.()]),
-            h('div', { class: 'slidev-layout-side' }, [slots.right?.()]),
-          ])
-        case 'two-cols-header':
-          return h('section', { class: className }, [
-            h('header', { class: 'slidev-layout-header' }, [slots.header?.()]),
-            h('div', { class: 'slidev-layout-body' }, [
-              h('div', { class: 'slidev-layout-main' }, [slots.default?.()]),
-              h('div', { class: 'slidev-layout-side' }, [slots.right?.()]),
-            ]),
-          ])
-        case 'image':
-          return h('section', { class: className }, [
-            h('div', {
-              class: 'slidev-layout-image slidev-layout-image-full',
-              style: imageStyle.value,
-            }),
-            h('div', { class: 'slidev-layout-image-content' }, [slots.default?.()]),
-          ])
-        case 'image-left':
-          return h('section', { class: className }, [
-            h('div', { class: 'slidev-layout-image', style: imageStyle.value }),
-            h('div', { class: 'slidev-layout-image-content' }, [slots.default?.()]),
-          ])
-        case 'image-right':
-          return h('section', { class: className }, [
-            h('div', { class: 'slidev-layout-image-content' }, [slots.default?.()]),
-            h('div', { class: 'slidev-layout-image', style: imageStyle.value }),
-          ])
-        case 'iframe':
-          return h('section', { class: className }, [
-            iframeUrl.value === null
-              ? slots.default?.()
-              : h('iframe', {
-                  class: 'slidev-layout-iframe-frame',
-                  src: iframeUrl.value,
-                  title: 'Embedded slide content',
-                }),
-          ])
-        case 'iframe-left':
-          return h('section', { class: className }, [
-            iframeUrl.value === null
-              ? null
-              : h('iframe', {
-                  class: 'slidev-layout-iframe-frame',
-                  src: iframeUrl.value,
-                  title: 'Embedded slide content',
-                }),
-            h('div', { class: 'slidev-layout-iframe-content' }, [slots.default?.()]),
-          ])
-        case 'iframe-right':
-          return h('section', { class: className }, [
-            h('div', { class: 'slidev-layout-iframe-content' }, [slots.default?.()]),
-            iframeUrl.value === null
-              ? null
-              : h('iframe', {
-                  class: 'slidev-layout-iframe-frame',
-                  src: iframeUrl.value,
-                  title: 'Embedded slide content',
-                }),
-          ])
-        default:
-          return h('section', { class: className }, [slots.default?.()])
+      const ctx: LayoutContext = {
+        className: ['slidev-layout', `slidev-layout-${layoutName.value}`, props.slide.class],
+        slots,
+        imageStyle: imageStyle.value,
+        iframeUrl: iframeUrl.value,
       }
+
+      const renderer = layoutRenderers[layoutName.value] ?? defaultSection
+      return renderer(ctx)
     }
   },
 })

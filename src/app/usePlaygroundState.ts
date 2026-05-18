@@ -123,11 +123,11 @@ function readInitialState(defaults: PlaygroundDefaults): DecodedState {
   })
 
   const [error, raw] = tryRun(() => decompressFromEncodedURIComponent(hash))
-  if (error || !raw) {
+  if (error !== undefined || raw === undefined || raw === '') {
     return fallback()
   }
   const [decodeError, decoded] = tryRun(() => decodeState(raw, defaults.markdown))
-  if (decodeError || !decoded) {
+  if (decodeError !== undefined || decoded === undefined) {
     return fallback()
   }
   return decoded
@@ -136,7 +136,7 @@ function readInitialState(defaults: PlaygroundDefaults): DecodedState {
 function decodeState(raw: string, fallbackMarkdown: string): DecodedState {
   if (raw.startsWith('{')) {
     const [parseError, json] = tryRun<unknown>(() => JSON.parse(raw))
-    if (parseError) {
+    if (parseError !== undefined) {
       return { markdown: fallbackMarkdown, componentFiles: {} }
     }
     const result = UrlStateSchema.safeParse(json)

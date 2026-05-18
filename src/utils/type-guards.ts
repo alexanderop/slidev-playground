@@ -34,7 +34,7 @@ export type HighlightStep = readonly number[] | readonly ['all']
 
 export function parseHighlightSteps(json: string): readonly HighlightStep[] {
   const [error, parsed] = tryRun<unknown>(() => JSON.parse(json))
-  if (error || !Array.isArray(parsed)) {
+  if (error !== undefined || !Array.isArray(parsed)) {
     return []
   }
   const result: HighlightStep[] = []

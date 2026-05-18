@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onClickOutside } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 const {
   modelValue,
@@ -17,8 +17,7 @@ const emit = defineEmits<{
 }>()
 
 const open = ref(false)
-const wrapperRef = ref<HTMLElement | null>(null)
-const inputRef = ref<HTMLInputElement | null>(null)
+const wrapperRef = useTemplateRef<HTMLElement>('wrapperRef')
 
 onClickOutside(wrapperRef, () => {
   open.value = false
@@ -33,8 +32,11 @@ const filtered = computed(() => {
 })
 
 function onInput(e: Event) {
-  const value = (e.target as HTMLInputElement).value
-  emit('update:modelValue', value)
+  const target = e.target
+  if (!(target instanceof HTMLInputElement)) {
+    return
+  }
+  emit('update:modelValue', target.value)
   open.value = true
 }
 
@@ -51,7 +53,6 @@ function onFocus() {
 <template>
   <div ref="wrapperRef" class="font-autocomplete">
     <input
-      ref="inputRef"
       type="text"
       class="font-input"
       :value="modelValue"

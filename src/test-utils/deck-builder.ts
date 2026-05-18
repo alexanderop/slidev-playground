@@ -17,6 +17,35 @@ type CodeBlockOptions = {
   startLine?: number
 }
 
+function hasValue(value: string | undefined): value is string {
+  return value !== undefined && value !== ''
+}
+
+function buildLinesMeta(lines: boolean | undefined, startLine: number | undefined): string {
+  const hasStartLine = startLine !== undefined && startLine !== 0
+  if (lines !== true && !hasStartLine) {
+    return ''
+  }
+  const parts: string[] = []
+  if (lines === true) {
+    parts.push('lines:true')
+  }
+  if (hasStartLine) {
+    parts.push(`startLine:${startLine}`)
+  }
+  return ` {${parts.join(',')}}`
+}
+
+function buildCodeMeta(options: Omit<CodeBlockOptions, 'lang'>): string {
+  const { filename, lines, startLine, highlights } = options
+  let meta = hasValue(filename) ? ` [${filename}]` : ''
+  meta += buildLinesMeta(lines, startLine)
+  if (hasValue(highlights)) {
+    meta += `${meta ? '' : ' '}{${highlights}}`
+  }
+  return meta
+}
+
 type SlideOptions = {
   layout?: string
   src?: string
@@ -102,26 +131,9 @@ class SlideBuilder {
 
   code(source: string, options: CodeBlockOptions = {}): this {
     const { lang = 'ts', filename, highlights, lines, startLine } = options
-    let meta = ''
-    if (filename !== null && filename !== undefined && filename !== '') {
-      meta += ` [${filename}]`
-    }
-    if (lines === true || (startLine !== null && startLine !== undefined && startLine !== 0)) {
-      const parts: string[] = []
-      if (lines === true) {
-        parts.push('lines:true')
-      }
-      if (startLine !== null && startLine !== undefined && startLine !== 0) {
-        parts.push(`startLine:${startLine}`)
-      }
-      meta += ` {${parts.join(',')}}`
-    }
-    if (highlights !== null && highlights !== undefined && highlights !== '') {
-      meta += `${meta ? '' : ' '}{${highlights}}`
-    }
+    const meta = buildCodeMeta({ filename, lines, startLine, highlights })
 
-    const opener = `\`\`\`${lang}${meta}`
-    this.lines.push(opener)
+    this.lines.push(`\`\`\`${lang}${meta}`)
     this.lines.push(source)
     this.lines.push('```')
     return this
@@ -229,35 +241,37 @@ export class DeckBuilder {
 
   build(): string {
     const chunks: string[] = []
-
-    // Deck frontmatter
     const hasFrontmatter = Object.keys(this.frontmatter).length > 0
     if (hasFrontmatter) {
       chunks.push(`---\n${buildYaml(this.frontmatter)}---`)
     }
 
     for (const [i, slide] of this.slides.entries()) {
-      const isFirst = i === 0
-      const body = slide._buildBody()
-      const hasOptions = slide._hasOptions()
-      const needsSeparator = !isFirst
-
-      if (needsSeparator && hasOptions) {
-        chunks.push(`---\n${slide._buildOptions()}\n---`)
-      }
-      if (needsSeparator && !hasOptions) {
-        chunks.push('---')
-      }
-      if (!needsSeparator && hasOptions && !hasFrontmatter) {
-        chunks.push(`---\n${slide._buildOptions()}\n---`)
-      }
-
-      if (body) {
-        chunks.push(body)
-      }
+      appendSlideChunks(chunks, slide, { isFirst: i === 0, hasFrontmatter })
     }
 
     return chunks.join('\n\n') + '\n'
+  }
+}
+
+function appendSlideChunks(
+  chunks: string[],
+  slide: SlideBuilder,
+  context: { isFirst: boolean; hasFrontmatter: boolean },
+): void {
+  const body = slide._buildBody()
+  const hasOptions = slide._hasOptions()
+  const needsSeparator = !context.isFirst
+
+  if (needsSeparator) {
+    chunks.push(hasOptions ? `---\n${slide._buildOptions()}\n---` : '---')
+  }
+  if (!needsSeparator && hasOptions && !context.hasFrontmatter) {
+    chunks.push(`---\n${slide._buildOptions()}\n---`)
+  }
+
+  if (body) {
+    chunks.push(body)
   }
 }
 

@@ -173,7 +173,7 @@ function createRenderer(): Renderer {
         }),
       ),
     )
-    if (error || !component) {
+    if (error !== undefined || component === undefined) {
       const message = errorMessage(error, 'Failed to compile the rendered slide template.')
       const fallback = markRaw(
         defineComponent({
@@ -260,6 +260,42 @@ function reconcileSlideClicks(
   return result
 }
 
+function renderSpecialBlock(language: string, code: string): string | null {
+  if (language === 'mermaid') {
+    return `<slidev-mermaid-block code="${encodeURIComponent(code)}"></slidev-mermaid-block>`
+  }
+  if (language === 'plantuml') {
+    return `<slidev-plant-uml-block code="${encodeURIComponent(code)}"></slidev-plant-uml-block>`
+  }
+  return null
+}
+
+function renderCodeBlockAttributes(
+  info: ReturnType<typeof parseFenceInfo>,
+  normalizedCode: string,
+  defaultLineNumbers: boolean,
+): { html: string; codeClicks: number } {
+  const highlightSteps =
+    info.highlightSteps.length > 0 ? info.highlightSteps : [info.highlightedLines]
+  const highlightStepsAttribute =
+    highlightSteps.length > 0
+      ? ` highlight-steps="${escapeHtmlAttribute(JSON.stringify(highlightSteps))}"`
+      : ''
+  const filenameAttribute =
+    info.filename !== null && info.filename !== undefined && info.filename !== ''
+      ? ` filename="${escapeHtmlAttribute(info.filename)}"`
+      : ''
+  const startLine = info.startLine ?? 1
+  const lineNumbers = info.lineNumbers ?? defaultLineNumbers
+
+  return {
+    codeClicks: Math.max(0, highlightSteps.length - 1),
+    html: `<slidev-code-block code="${encodeURIComponent(
+      normalizedCode,
+    )}" language="${escapeHtmlAttribute(info.language)}"${filenameAttribute}${highlightStepsAttribute} line-numbers="${String(lineNumbers)}" start-line="${String(startLine)}"></slidev-code-block>`,
+  }
+}
+
 function renderFence(
   rawInfo: string,
   code: string,
@@ -268,45 +304,16 @@ function renderFence(
   const info = parseFenceInfo(rawInfo)
   const normalizedCode = code.replace(/\n$/, '')
 
-  if (info.language === 'mermaid') {
-    return {
-      codeClicks: 0,
-      html: `<slidev-mermaid-block code="${encodeURIComponent(normalizedCode)}"></slidev-mermaid-block>`,
-    }
-  }
-
-  if (info.language === 'plantuml') {
-    return {
-      codeClicks: 0,
-      html: `<slidev-plant-uml-block code="${encodeURIComponent(normalizedCode)}"></slidev-plant-uml-block>`,
-    }
+  const special = renderSpecialBlock(info.language, normalizedCode)
+  if (special !== null) {
+    return { codeClicks: 0, html: special }
   }
 
   if (!info.language) {
-    return {
-      codeClicks: 0,
-      html: `<pre><code>${escapeHtml(normalizedCode)}</code></pre>`,
-    }
+    return { codeClicks: 0, html: `<pre><code>${escapeHtml(normalizedCode)}</code></pre>` }
   }
 
-  const highlightSteps =
-    info.highlightSteps.length > 0 ? info.highlightSteps : [info.highlightedLines]
-  const highlightStepsAttribute =
-    highlightSteps.length > 0
-      ? ` highlight-steps="${escapeHtmlAttribute(JSON.stringify(highlightSteps))}"`
-      : ''
-  const startLine = info.startLine ?? 1
-
-  return {
-    codeClicks: Math.max(0, highlightSteps.length - 1),
-    html: `<slidev-code-block code="${encodeURIComponent(
-      normalizedCode,
-    )}" language="${escapeHtmlAttribute(info.language)}"${
-      info.filename !== null && info.filename !== undefined && info.filename !== ''
-        ? ` filename="${escapeHtmlAttribute(info.filename)}"`
-        : ''
-    }${highlightStepsAttribute} line-numbers="${String(info.lineNumbers ?? options.lineNumbers)}" start-line="${String(startLine)}"></slidev-code-block>`,
-  }
+  return renderCodeBlockAttributes(info, normalizedCode, options.lineNumbers)
 }
 
 function mergeFrontmatter(

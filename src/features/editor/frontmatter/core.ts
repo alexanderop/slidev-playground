@@ -295,23 +295,25 @@ function formatYamlScalar(value: YamlScalar): string {
   return formatYamlString(value)
 }
 
-function formatYamlString(value: string): string {
-  if (
-    value === '' ||
-    value.startsWith('#') ||
-    value.includes(':') ||
-    value.includes('[') ||
-    value.includes(']') ||
-    value.includes('{') ||
-    value.includes('}') ||
-    value.includes(',') ||
-    value.trim() !== value ||
-    /^[-?]|^\d/.test(value) ||
-    /^(true|false|null|yes|no|on|off)$/i.test(value)
-  ) {
-    return quoteYamlString(value)
+const YAML_RESERVED_CHARS = ['#', ':', '[', ']', '{', '}', ',']
+const YAML_LOOKALIKE_KEYWORD_RE = /^(true|false|null|yes|no|on|off)$/i
+const YAML_AMBIGUOUS_START_RE = /^[-?]|^\d/
+
+function needsYamlQuoting(value: string): boolean {
+  if (value === '') {
+    return true
   }
-  return value
+  if (YAML_RESERVED_CHARS.some((char) => value.includes(char))) {
+    return true
+  }
+  if (value.trim() !== value) {
+    return true
+  }
+  return YAML_AMBIGUOUS_START_RE.test(value) || YAML_LOOKALIKE_KEYWORD_RE.test(value)
+}
+
+function formatYamlString(value: string): string {
+  return needsYamlQuoting(value) ? quoteYamlString(value) : value
 }
 
 function quoteYamlString(value: string): string {
@@ -431,20 +433,18 @@ function decodeFlowArray(raw: string): YamlScalar[] | null {
   return items.map((item) => decodeYamlScalar(item))
 }
 
-function decodeYamlScalar(raw: string): YamlScalar {
-  if (raw === '' || raw === '~' || raw === 'null' || raw === 'Null' || raw === 'NULL') {
+const YAML_NULL_TOKENS: ReadonlySet<string> = new Set(['', '~', 'null', 'Null', 'NULL'])
+const YAML_TRUE_TOKENS: ReadonlySet<string> = new Set(['true', 'True', 'TRUE'])
+const YAML_FALSE_TOKENS: ReadonlySet<string> = new Set(['false', 'False', 'FALSE'])
+
+function decodeYamlQuotedString(raw: string): string | null {
+  if (raw.length < 2) {
     return null
   }
-  if (raw === 'true' || raw === 'True' || raw === 'TRUE') {
-    return true
-  }
-  if (raw === 'false' || raw === 'False' || raw === 'FALSE') {
-    return false
-  }
-  if (raw.startsWith("'") && raw.endsWith("'") && raw.length >= 2) {
+  if (raw.startsWith("'") && raw.endsWith("'")) {
     return raw.slice(1, -1).replaceAll("''", "'")
   }
-  if (raw.startsWith('"') && raw.endsWith('"') && raw.length >= 2) {
+  if (raw.startsWith('"') && raw.endsWith('"')) {
     return raw
       .slice(1, -1)
       .replaceAll('\\n', '\n')
@@ -452,11 +452,36 @@ function decodeYamlScalar(raw: string): YamlScalar {
       .replaceAll('\\"', '"')
       .replaceAll('\\\\', '\\')
   }
+  return null
+}
+
+function decodeYamlNumber(raw: string): number | null {
   if (/^-?\d+$/.test(raw)) {
     return Number.parseInt(raw, 10)
   }
   if (/^-?\d*\.\d+$/.test(raw)) {
     return Number.parseFloat(raw)
+  }
+  return null
+}
+
+function decodeYamlScalar(raw: string): YamlScalar {
+  if (YAML_NULL_TOKENS.has(raw)) {
+    return null
+  }
+  if (YAML_TRUE_TOKENS.has(raw)) {
+    return true
+  }
+  if (YAML_FALSE_TOKENS.has(raw)) {
+    return false
+  }
+  const quoted = decodeYamlQuotedString(raw)
+  if (quoted !== null) {
+    return quoted
+  }
+  const number = decodeYamlNumber(raw)
+  if (number !== null) {
+    return number
   }
   return raw
 }

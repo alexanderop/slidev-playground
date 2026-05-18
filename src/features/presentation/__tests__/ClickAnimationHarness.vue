@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { useTemplateRef } from 'vue'
 import { useClickAnimation } from '../composables/useClickAnimation'
 
 const { slideHtml, currentClick } = defineProps<{
@@ -7,7 +7,7 @@ const { slideHtml, currentClick } = defineProps<{
   currentClick: number
 }>()
 
-const slideRef = ref<HTMLElement | null>(null)
+const slideRef = useTemplateRef<HTMLElement>('slideRef')
 
 useClickAnimation(slideRef, () => ({
   currentClick,

@@ -43,7 +43,6 @@ const aspectRatio = useFrontmatterField('aspectRatio', {
     if (Math.abs(raw - 1) < 0.001) {
       return '1:1'
     }
-    return
   },
 })
 

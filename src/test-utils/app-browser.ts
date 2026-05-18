@@ -56,7 +56,7 @@ export function decodePlaygroundState(hash: string): {
   const raw = decompressFromEncodedURIComponent(hash) ?? ''
   if (raw.startsWith('{')) {
     const [parseError, json] = tryRun<unknown>(() => JSON.parse(raw))
-    if (parseError) {
+    if (parseError !== undefined) {
       return { markdown: raw, componentFiles: {} }
     }
     const result = PlaygroundStateSchema.safeParse(json)

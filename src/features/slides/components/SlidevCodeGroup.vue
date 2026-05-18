@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref, useTemplateRef } from 'vue'
 
+defineSlots<{
+  default?: () => unknown
+}>()
+
 const blocksRef = useTemplateRef('blocksRef')
 const activeTitle = ref('')
 const tabs = ref<string[]>([])
@@ -47,7 +51,7 @@ onMounted(() => {
       </div>
     </div>
     <div ref="blocksRef" class="slidev-code-group-blocks">
-      <slot />
+      <slot></slot>
     </div>
   </div>
 </template>

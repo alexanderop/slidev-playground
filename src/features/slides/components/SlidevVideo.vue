@@ -3,10 +3,14 @@ defineProps<{
   controls?: boolean
   autoplay?: boolean
 }>()
+
+defineSlots<{
+  default?: () => unknown
+}>()
 </script>
 
 <template>
   <video :controls="controls" :autoplay="autoplay">
-    <slot />
+    <slot></slot>
   </video>
 </template>

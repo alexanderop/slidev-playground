@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RenderedSlide } from '../../../types'
 import { useWindowSize } from '@vueuse/core'
-import { computed, inject, ref } from 'vue'
+import { computed, inject, useTemplateRef } from 'vue'
 import { useClickAnimation } from '../composables/useClickAnimation'
 import { slideDimensionsKey } from '../../../config/injection-keys'
 import { renderMarkdown } from '../../../utils/renderer'
@@ -39,7 +39,7 @@ defineEmits<{
   closeGoto: []
 }>()
 
-const presentSlideRef = ref<HTMLElement | null>(null)
+const presentSlideRef = useTemplateRef<HTMLElement>('presentSlideRef')
 const dimensions = inject(slideDimensionsKey)!
 const { width: windowWidth, height: windowHeight } = useWindowSize()
 

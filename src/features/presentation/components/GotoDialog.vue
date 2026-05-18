@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 
 const { currentSlide, open, totalSlides } = defineProps<{
   currentSlide: number
@@ -12,7 +12,7 @@ const emit = defineEmits<{
   select: [index: number]
 }>()
 
-const inputRef = ref<HTMLInputElement | null>(null)
+const inputRef = useTemplateRef<HTMLInputElement>('inputRef')
 const query = ref('')
 const selectedIndex = ref(0)
 

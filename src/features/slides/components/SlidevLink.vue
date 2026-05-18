@@ -6,6 +6,10 @@ const { to } = defineProps<{
   to: number | string
 }>()
 
+defineSlots<{
+  default?: () => unknown
+}>()
+
 const nav = inject(slidevNavKey, defaultSlidevNav)
 
 function handleClick(event: Event) {
@@ -19,6 +23,6 @@ function handleClick(event: Event) {
 
 <template>
   <a href="#" @click="handleClick">
-    <slot />
+    <slot></slot>
   </a>
 </template>
