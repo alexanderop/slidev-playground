@@ -45,9 +45,17 @@ export function slidevCompletionSource(context: CompletionContext): CompletionRe
     }
   }
 
-  if (/^(::?[\w.:-]*)?$/.test(trimmedBefore) || trimmedBefore === '') {
+  if (/^::?[\w.:-]*$/.test(trimmedBefore)) {
     return {
       from: context.pos - trimmedBefore.length,
+      options: lineSnippetCompletions,
+      validFor: /^::?[\w.:-]*$/,
+    }
+  }
+
+  if (context.explicit && trimmedBefore === '') {
+    return {
+      from: context.pos,
       options: lineSnippetCompletions,
       validFor: /^(?:::?[\w.:-]*)?$/,
     }
@@ -100,16 +108,24 @@ function completeFrontmatter(
     }
   }
 
-  const keyMatch = /^(\s*)([\w-]*)$/.exec(lineBefore)
-  if (!keyMatch) {
-    return null
+  const keyMatch = /^(\s*)([\w-]+)$/.exec(lineBefore)
+  if (keyMatch) {
+    return {
+      from: line.from + keyMatch[1].length,
+      options: frontmatterKeyCompletions,
+      validFor: /^[\w-]*$/,
+    }
   }
 
-  return {
-    from: line.from + keyMatch[1].length,
-    options: frontmatterKeyCompletions,
-    validFor: /^[\w-]*$/,
+  if (context.explicit && /^\s*$/.test(lineBefore)) {
+    return {
+      from: context.pos,
+      options: frontmatterKeyCompletions,
+      validFor: /^[\w-]*$/,
+    }
   }
+
+  return null
 }
 
 function isInsideFrontmatter(context: CompletionContext) {

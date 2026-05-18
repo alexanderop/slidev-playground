@@ -1,11 +1,18 @@
 import type { Ref } from 'vue'
-import { completionKeymap } from '@codemirror/autocomplete'
+import { closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
 import { EditorState } from '@codemirror/state'
 import { oneDark } from '@codemirror/theme-one-dark'
-import { EditorView, keymap, lineNumbers } from '@codemirror/view'
+import {
+  drawSelection,
+  EditorView,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  keymap,
+  lineNumbers,
+} from '@codemirror/view'
 import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 import { slideBoundaries } from './slideBoundaries'
 import { slidevAutocompletion } from './slidevAutocompletion'
@@ -45,8 +52,19 @@ export function useCodeMirror(
       doc: doc.value,
       extensions: [
         lineNumbers(),
+        highlightActiveLineGutter(),
+        highlightActiveLine(),
+        drawSelection(),
         history(),
-        keymap.of([...completionKeymap, ...defaultKeymap, ...historyKeymap, indentWithTab]),
+        closeBrackets(),
+        EditorView.lineWrapping,
+        keymap.of([
+          ...closeBracketsKeymap,
+          ...completionKeymap,
+          ...defaultKeymap,
+          ...historyKeymap,
+          indentWithTab,
+        ]),
         markdown({ codeLanguages: languages }),
         slidevAutocompletion,
         oneDark,
