@@ -27,13 +27,10 @@ export function useCodeMirror(
       return
     }
     isApplyingExternal = true
-    try {
-      view.value.dispatch({
-        changes: { from: 0, to: current.length, insert: value },
-      })
-    } finally {
-      isApplyingExternal = false
-    }
+    view.value.dispatch({
+      changes: { from: 0, to: current.length, insert: value },
+    })
+    isApplyingExternal = false
   }
 
   function getContent(): string {

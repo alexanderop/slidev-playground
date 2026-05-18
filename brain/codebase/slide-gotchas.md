@@ -10,7 +10,7 @@ If there are no custom component files, the app stores a compressed markdown
 string directly in the hash. If there are component files, it stores compressed
 JSON with `{ m, c }`.
 
-Do not assume all shared hashes decode to JSON.
+Do not assume all shared hashes decode to JSON. See [[url-state-and-sharing]].
 
 ## Feature Boundaries Are Enforced
 
@@ -19,10 +19,12 @@ Features must not import each other. Composition happens in `src/app/`.
 If a change seems to require `editor -> slides` or `presentation -> editor`
 imports, the design is probably wrong.
 
-## Tests Are Browser-Only
+## Default Test Project Is Browser
 
-There are no Node unit tests in this repo. Tests should be `*.browser.test.ts`
-and render the real `App.vue`.
+Default: `*.browser.test.ts` rendering the real `App.vue`. The `node` project
+exists for framework-free pure helpers only (e.g. `frontmatter-core.test.ts`) —
+anything touching Vue, the DOM, or a reactive composable belongs in the browser
+project. See [[testing-strategy]].
 
 ## Use `vite-plus`, Not `vite` or `vitest`
 
@@ -32,18 +34,19 @@ Imports and tooling should go through `vite-plus` and `vite-plus/test`.
 
 `Quote.vue` registers `<Quote>` and `<quote>`. If the file is named `Comp1.vue`,
 the usable tag is `Comp1`, not whatever component name you intended internally.
+See [[custom-components]].
 
 ## Hash Changes Are API Changes
 
 Shared URLs are a user-facing contract. Treat URL format changes as compatibility
-changes, not internal refactors.
+changes, not internal refactors. See [[principles/treat-serialized-formats-as-public-api]].
 
 ## Notes With Click Markers Are Progressive
 
 Speaker notes can contain `[click]` and `[click:N]` markers. Notes do not all
-appear at once while presenting.
+appear at once while presenting. See [[presentation-behavior]].
 
 ## Frontmatter Support Is Partial
 
 Do not assume every upstream Slidev frontmatter field is implemented locally.
-Check `docs/frontmatter-support.md` and the render/runtime code first.
+Check [[frontmatter-support]] and the render/runtime code first.

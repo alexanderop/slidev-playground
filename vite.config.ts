@@ -60,7 +60,12 @@ export default defineConfig({
   },
 
   lint: {
-    jsPlugins: ['./src/lint/feature-boundaries.js', './src/lint/no-else.js'],
+    jsPlugins: [
+      './src/lint/feature-boundaries.js',
+      './src/lint/no-else.js',
+      './src/lint/no-try-catch.js',
+      './src/lint/composable-must-use-vue.js',
+    ],
     options: {
       typeAware: true,
       typeCheck: true,
@@ -74,6 +79,12 @@ export default defineConfig({
           'typescript/no-unsafe-call': 'off',
           'typescript/no-unsafe-return': 'off',
           'typescript/no-unsafe-argument': 'off',
+        },
+      },
+      {
+        files: ['src/utils/try-run.ts'],
+        rules: {
+          'errors/no-try-catch': 'off',
         },
       },
     ],
@@ -91,6 +102,8 @@ export default defineConfig({
       'no-else-return': ['error', { allowElseIf: false }],
       'prefer-const': 'error',
       curly: 'error',
+      complexity: ['warn', { max: 10 }],
+      'no-nested-ternary': 'error',
 
       // TypeScript strictness
       'typescript/no-explicit-any': 'warn',
@@ -107,6 +120,7 @@ export default defineConfig({
       'typescript/no-deprecated': 'warn',
       'typescript/ban-ts-comment': 'warn',
       'typescript/return-await': 'warn',
+      'typescript/consistent-type-assertions': ['warn', { assertionStyle: 'never' }],
 
       // Import hygiene
       'import/no-cycle': 'error',
@@ -155,6 +169,8 @@ export default defineConfig({
 
       // Style (custom JS plugin)
       'style/no-else': 'error',
+      'errors/no-try-catch': 'error',
+      'composables/must-use-vue': 'error',
 
       // Pedantic but useful — turn off noisy ones
       'max-lines-per-function': 'off',

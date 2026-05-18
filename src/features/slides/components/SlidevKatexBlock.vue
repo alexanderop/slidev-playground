@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, ref, watchEffect } from 'vue'
 import { presentationClickKey } from '../../../config/injection-keys'
+import { tryRun } from '../../../utils/try-run'
 
 const { ranges } = defineProps<{
   ranges: string
@@ -10,11 +11,11 @@ const el = ref<HTMLDivElement>()
 const currentClick = inject(presentationClickKey, ref(0))
 
 const parsedRanges = computed<string[]>(() => {
-  try {
-    return JSON.parse(ranges)
-  } catch {
+  const [error, parsed] = tryRun(() => JSON.parse(ranges))
+  if (error || !Array.isArray(parsed)) {
     return []
   }
+  return parsed.filter((item): item is string => typeof item === 'string')
 })
 
 function parseRangeString(totalLines: number, rangeStr: string): number[] {

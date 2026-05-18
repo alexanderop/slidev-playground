@@ -39,8 +39,10 @@ Important composables/components:
 
 ## State Model
 
-There is no Pinia, Vuex, or Vue Router. Shared state is composed with
-`ref`/`computed` and `provide`/`inject`.
+Shared state is composed with `ref`/`computed` and `provide`/`inject`.
+`src/app/usePlaygroundState.ts` is the single source of truth for `markdown`,
+`componentFiles`, compiled `customComponents`, and URL-hash sync via LZ-string
+compression. See [[url-state-and-sharing]] and [[custom-components]].
 
 Injection keys in `src/config/injection-keys.ts`:
 
@@ -63,8 +65,6 @@ Important constants in `src/config/constants.ts`:
 - `PREVIEW_PADDING = 48`
 - `SLIDE_NUMBER_WIDTH = 32`
 
-Persistence uses URL-hash sync with LZ-string compression.
-
 ## Render Pipeline
 
 Slide rendering lives in `src/features/slides/render.ts`.
@@ -79,7 +79,7 @@ High-level flow:
 6. Split named slide slots.
 7. Compile slide templates with the registered runtime Vue components.
 
-Read `docs/slidev-markdown-spec.md` before changing parsing or render behavior.
+Read [[slidev-markdown-spec]] before changing parsing or render behavior.
 Read the upstream Slidev source before implementing compatibility work.
 
 ## UI and Theming
@@ -104,14 +104,14 @@ Component conventions:
 
 Testing conventions:
 
-- Browser tests only, no Node unit tests
-- Test files use `*.browser.test.ts`
-- Tests render the real `App.vue`
+- Default project is browser (`*.browser.test.ts`) rendering the real `App.vue`
+- A `node` project handles framework-free pure helpers (`*.test.ts`); use it
+  only when there is no DOM or Vue dependency
 - Prefer `AppPage`, `PresentationPage`, and related page objects
 - Use the deck builder for markdown setup
 - Cleanup uses `using` and `Symbol.dispose`
 
-Read `docs/testing-strategy.md` before adding or changing tests.
+Read [[testing-strategy]] before adding or changing tests.
 
 ## Project Map
 
@@ -132,5 +132,4 @@ src/
   test-utils/
   test-fixtures/
   __screenshots__/
-docs/
 ```

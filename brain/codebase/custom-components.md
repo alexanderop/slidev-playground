@@ -8,9 +8,10 @@ shared URL state.
 
 Relevant code:
 
-- `src/app/useCustomComponents.ts`
-- `src/features/slides/custom-components.ts`
+- `src/app/usePlaygroundState.ts` — owns the `componentFiles` ref, exposes the compiled `customComponents` map, and contains the runtime `compileFromFiles()` function
 - `src/custom-components.browser.test.ts`
+
+See [[url-state-and-sharing]] for how component files travel in the shared URL hash.
 
 ## Data Model
 

@@ -4,6 +4,7 @@ import { presentationClickKey } from '../../../config/injection-keys'
 import SlidevErrorBlock from './SlidevErrorBlock.vue'
 import { getCodeBlockHtml } from '../shiki'
 import { parseHighlightSteps } from '../../../utils/type-guards'
+import { errorMessage, tryRunAsync } from '../../../utils/try-run'
 
 const {
   code,
@@ -46,17 +47,20 @@ const activeHighlightLines = computed(() => {
 })
 
 watchEffect(async () => {
-  try {
-    html.value = await getCodeBlockHtml(decodedCode.value, language, {
+  const [error, result] = await tryRunAsync(
+    getCodeBlockHtml(decodedCode.value, language, {
       highlightedLines: activeHighlightLines.value,
       lineNumbers: showLineNumbers.value,
       startLine: parsedStartLine.value,
-    })
-    renderError.value = ''
-  } catch (error) {
-    renderError.value = error instanceof Error ? error.message : 'Failed to render code block.'
+    }),
+  )
+  if (error || result === undefined) {
+    renderError.value = errorMessage(error, 'Failed to render code block.')
     html.value = ''
+    return
   }
+  html.value = result
+  renderError.value = ''
 })
 </script>
 

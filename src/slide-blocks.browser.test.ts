@@ -2,6 +2,10 @@ import { getMarkdown, settleApp } from './test-utils/app-browser'
 import { AppPage, waitForSelector } from './test-utils/page-objects/app-page'
 import { deck } from './test-utils/deck-builder'
 
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
 it('should render diagram, media, and helper components when Slidev content blocks are present', async () => {
   const markdown = `# Slide blocks
 
@@ -35,23 +39,19 @@ it('should insert the fetched SVG when an icon tag renders', async () => {
     }),
   )
 
-  try {
-    const markdown = deck()
-      .title('Icon test')
-      .slide('Icons', (s) => s.text('<mdi:home />'))
-      .build()
+  const markdown = deck()
+    .title('Icon test')
+    .slide('Icons', (s) => s.text('<mdi:home />'))
+    .build()
 
-    using app = await AppPage.render({ markdown })
+  using app = await AppPage.render({ markdown })
 
-    await waitForSelector(app.container, '.slidev-icon svg')
+  await waitForSelector(app.container, '.slidev-icon svg')
 
-    expect(fetchSpy).toHaveBeenCalledWith('https://api.iconify.design/mdi/home.svg')
+  expect(fetchSpy).toHaveBeenCalledWith('https://api.iconify.design/mdi/home.svg')
 
-    const svg = app.container.querySelector('.slidev-icon svg')
-    expect(svg instanceof SVGElement).toBe(true)
-  } finally {
-    fetchSpy.mockRestore()
-  }
+  const svg = app.container.querySelector('.slidev-icon svg')
+  expect(svg instanceof SVGElement).toBe(true)
 })
 
 it('should sync note sections and math highlights when presenting click-driven notes and KaTeX ranges', async () => {

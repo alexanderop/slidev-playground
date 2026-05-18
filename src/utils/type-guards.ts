@@ -1,3 +1,5 @@
+import { tryRun } from './try-run'
+
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -31,13 +33,8 @@ export function parsePositiveInt(value: string | null | undefined): number | nul
 export type HighlightStep = readonly number[] | readonly ['all']
 
 export function parseHighlightSteps(json: string): readonly HighlightStep[] {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(json)
-  } catch {
-    return []
-  }
-  if (!Array.isArray(parsed)) {
+  const [error, parsed] = tryRun<unknown>(() => JSON.parse(json))
+  if (error || !Array.isArray(parsed)) {
     return []
   }
   const result: HighlightStep[] = []
@@ -49,8 +46,8 @@ export function parseHighlightSteps(json: string): readonly HighlightStep[] {
       result.push(['all'])
       continue
     }
-    if (step.every((n) => typeof n === 'number' && Number.isFinite(n))) {
-      result.push(step as readonly number[])
+    if (step.every((n): n is number => typeof n === 'number' && Number.isFinite(n))) {
+      result.push(step)
       continue
     }
     return []

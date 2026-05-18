@@ -5,7 +5,8 @@ not in local storage or a backend.
 
 ## State Shape
 
-`src/composables/useUrlSync.ts` supports two serialized formats:
+URL encoding and decoding live in `src/app/usePlaygroundState.ts`
+(`encodeState`, `decodeStateFromHash`). Two serialized formats are supported:
 
 1. Legacy format: compressed markdown string only
 2. Current format: compressed JSON object with:
@@ -59,7 +60,8 @@ Custom component files participate in shared state. A shared link can restore:
 - every custom `.vue` component file open in the editor
 
 This is why adding component-file support changes the hash format from plain
-markdown to the `{ m, c }` JSON payload.
+markdown to the `{ m, c }` JSON payload. See [[custom-components]] for the
+component model itself.
 
 ## Testing Notes
 
@@ -80,6 +82,6 @@ Relevant test coverage lives in:
 - Preserve compatibility with legacy plain-markdown hashes
 - Keep the serialized keys stable unless you also update test helpers
 - Treat hash writes as user-visible API changes because existing shared URLs
-  depend on them
+  depend on them — see [[principles/treat-serialized-formats-as-public-api]]
 - If you add new shared state, document whether it belongs in the compact
   legacy path, the JSON path, or both

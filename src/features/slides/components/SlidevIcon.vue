@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
+import { tryRunAsync } from '../../../utils/try-run'
 
 const { collection, name } = defineProps<{
   collection: string
@@ -18,16 +19,20 @@ watchEffect(async () => {
     return
   }
 
-  try {
-    const response = await fetch(`https://api.iconify.design/${collection}/${name}.svg`)
-    if (response.ok) {
-      const svg = await response.text()
-      cache.set(key, svg)
-      svgContent.value = svg
-    }
-  } catch {
+  const [fetchError, response] = await tryRunAsync(
+    fetch(`https://api.iconify.design/${collection}/${name}.svg`),
+  )
+  if (fetchError || !response || !response.ok) {
     svgContent.value = ''
+    return
   }
+  const [textError, svg] = await tryRunAsync(response.text())
+  if (textError || svg === undefined) {
+    svgContent.value = ''
+    return
+  }
+  cache.set(key, svg)
+  svgContent.value = svg
 })
 </script>
 

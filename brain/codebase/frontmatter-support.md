@@ -11,7 +11,8 @@ Relevant code:
 - `src/features/slides/frontmatter-schema.ts`
 - `src/composables/useHeadmatter.ts`
 - `src/features/editor/components/ConfigPanel.vue`
-- `docs/slidev-markdown-spec.md`
+- [[slidev-markdown-spec]]
+- [[theme-system]] for how `themeConfig.*` becomes runtime CSS variables
 
 ## Global Headmatter
 

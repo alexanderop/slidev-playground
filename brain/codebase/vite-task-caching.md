@@ -4,7 +4,7 @@ This project uses Vite Task caching through `vp run`.
 
 ## What We Cache
 
-In [vite.config.ts](/Users/alexanderopalic/Projects/opensource/slidev-playground/vite.config.ts), the `run.cache` block enables caching for both:
+In `vite.config.ts`, the `run.cache` block enables caching for both:
 
 - tasks defined in `vite.config.ts`
 - scripts executed through `vp run <script>`
@@ -17,27 +17,37 @@ vp run lint
 vp run ci
 ```
 
-## Project-Specific Cached Task
+## Project-Specific Cached Tasks
 
-We define a `ci` task in `vite.config.ts`:
+The `ci` task is a fan-in aggregator over three real tasks, each with its own
+`input` ignore globs so that `dist/`, `coverage/`, and `.vitest-attachments/`
+churn never busts the cache:
 
 ```ts
+'ci:check': { command: 'vp run check', input: [...] },
+'ci:test':  { command: 'vp test',  dependsOn: ['ci:check'], input: [...] },
+'ci:build': { command: 'vp build', dependsOn: ['ci:check'], env: ['NODE_ENV', 'VITE_*'], input: [...] },
 ci: {
-  command: 'vp run check && vp test && vp build',
+  command: 'echo "CI passed"',
+  dependsOn: ['ci:check', 'ci:test', 'ci:build'],
   env: ['NODE_ENV', 'VITE_*'],
   untrackedEnv: ['CI', 'GITHUB_ACTIONS'],
-}
+},
 ```
 
-Use it when you want a repeatable verification pass with cache-aware replay:
+Use it for repeatable verification with cache-aware replay:
 
 ```bash
 vp run ci
 ```
 
+`ci:test` and `ci:build` both depend on `ci:check`, so check runs once even when
+all three are requested.
+
 ## Important Limitation
 
-Vite+ currently caches and replays terminal output. It does **not** restore output files like `dist/`.
+Vite+ caches and replays terminal output. It does **not** restore output files
+like `dist/`.
 
 Implication:
 
@@ -57,23 +67,15 @@ vp run ci --no-cache
 
 ## Cache Inputs We Care About
 
-For the `ci` task, cache invalidation includes:
+For `ci:build` and `ci` (which inherits env keys), cache invalidation includes:
 
 - command arguments
 - tracked environment variables: `NODE_ENV`, `VITE_*`
-- files Vite Task automatically detects as inputs
+- files Vite Task auto-detects as inputs, minus the `dist/`, `coverage/`, and
+  `.vitest-attachments/` excludes declared in `input`
 
-Changes to `CI` and `GITHUB_ACTIONS` are passed through but do not invalidate the cache.
-
-## Current Repo Caveat
-
-Right now `vp test` fails if there are no matching test files for:
-
-```bash
-src/**/*.test.ts
-```
-
-So `vp run ci` will also fail until test files exist or the test setup is adjusted.
+Changes to `CI` and `GITHUB_ACTIONS` are passed through but do not invalidate
+the cache.
 
 ## References
 

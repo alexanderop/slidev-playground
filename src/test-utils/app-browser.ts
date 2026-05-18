@@ -5,6 +5,7 @@ import { nextTick } from 'vue'
 import { z } from 'zod/mini'
 import App from '../app/App.vue'
 import { _resetThemeForTesting } from '../composables/useTheme'
+import { tryRun } from '../utils/try-run'
 import '../styles'
 
 export type RenderAppOptions = {
@@ -54,15 +55,15 @@ export function decodePlaygroundState(hash: string): {
 } {
   const raw = decompressFromEncodedURIComponent(hash) ?? ''
   if (raw.startsWith('{')) {
-    try {
-      const result = PlaygroundStateSchema.safeParse(JSON.parse(raw))
-      if (result.success) {
-        return { markdown: result.data.m, componentFiles: result.data.c ?? {} }
-      }
-      return { markdown: raw, componentFiles: {} }
-    } catch {
+    const [parseError, json] = tryRun<unknown>(() => JSON.parse(raw))
+    if (parseError) {
       return { markdown: raw, componentFiles: {} }
     }
+    const result = PlaygroundStateSchema.safeParse(json)
+    if (result.success) {
+      return { markdown: result.data.m, componentFiles: result.data.c ?? {} }
+    }
+    return { markdown: raw, componentFiles: {} }
   }
   return { markdown: raw, componentFiles: {} }
 }

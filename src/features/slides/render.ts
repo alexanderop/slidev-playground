@@ -15,8 +15,9 @@ import { processClicks } from './click-processor'
 import type { SlidevConfig } from '../../composables/useHeadmatter'
 import { defaultSlidevNav, slidevNavKey } from '../../config/injection-keys'
 import { escapeHtml, escapeHtmlAttribute } from '../../utils/string-utils'
+import { errorMessage, tryRun } from '../../utils/try-run'
 import { extractStyles, scopeCSS } from './style-extractor'
-import type { RenderedSlide, SlideFrontmatter, SlideSlotMap } from '../../types'
+import type { RenderedSlide, SlideFrontmatter } from '../../types'
 import { asScopeId, asSlideFilepath, asSlotName } from '../../types/brand'
 import type { ScopeId, SlotName } from '../../types/brand'
 import { parseFenceInfo } from './fences'
@@ -147,9 +148,8 @@ function createRenderer(): Renderer {
       return cached
     }
 
-    try {
-      const render = compile(template)
-      const component = markRaw(
+    const [error, component] = tryRun(() =>
+      markRaw(
         defineComponent({
           name: 'CompiledSlideSlot',
           components: {
@@ -169,28 +169,25 @@ function createRenderer(): Renderer {
               },
             }
           },
-          render,
+          render: compile(template),
         }),
-      )
-      compiledComponentCache.set(template, component)
-      return component
-    } catch (error) {
+      ),
+    )
+    if (error || !component) {
+      const message = errorMessage(error, 'Failed to compile the rendered slide template.')
       const fallback = markRaw(
         defineComponent({
           name: 'CompiledSlideSlotError',
           components: { SlidevErrorBlock },
-          data: () => ({
-            message:
-              error instanceof Error
-                ? error.message
-                : 'Failed to compile the rendered slide template.',
-          }),
+          data: () => ({ message }),
           template: '<SlidevErrorBlock :message="message" />',
         }),
       )
       compiledComponentCache.set(template, fallback)
       return fallback
     }
+    compiledComponentCache.set(template, component)
+    return component
   }
 
   function renderSlide(
@@ -240,7 +237,7 @@ function createRenderer(): Renderer {
       totalClicks: reconcileSlideClicks(perSlot),
       filepath: asSlideFilepath(slide.filepath),
       parsedFrontmatter: fm,
-      slotComponents: slotComponents as SlideSlotMap,
+      slotComponents,
     }
   }
 

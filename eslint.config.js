@@ -67,6 +67,14 @@ export default [
       'vue/no-unused-refs': 'warn',
       'vue/no-useless-v-bind': 'warn',
       'vue/prefer-true-attribute-shorthand': 'warn',
+      'vue/prefer-use-template-ref': 'error',
+      'vue/no-unused-properties': ['error', { groups: ['props', 'data', 'computed', 'methods'] }],
+      'vue/no-unused-emit-declarations': 'error',
+      'vue/max-template-depth': ['error', { maxDepth: 8 }],
+
+      // Component API explicitness (low prio)
+      'vue/require-explicit-slots': 'warn',
+      'vue/require-expose': 'warn',
       'vue/html-self-closing': [
         'warn',
         {
@@ -114,6 +122,8 @@ export default [
       'no-console': 'warn',
       'prefer-const': 'error',
       curly: 'error',
+      complexity: ['warn', { max: 10 }],
+      'no-nested-ternary': 'error',
       'typescript/no-explicit-any': 'warn',
       'typescript/no-unsafe-assignment': 'warn',
       'typescript/no-unsafe-member-access': 'warn',
@@ -128,6 +138,7 @@ export default [
       'typescript/no-deprecated': 'warn',
       'typescript/ban-ts-comment': 'warn',
       'typescript/return-await': 'warn',
+      'typescript/consistent-type-assertions': ['warn', { assertionStyle: 'never' }],
       'import/no-cycle': 'error',
       'import/no-self-import': 'error',
       'import/no-duplicates': 'error',

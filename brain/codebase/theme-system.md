@@ -21,6 +21,9 @@ The main runtime inputs are:
 - frontmatter `colorSchema`
 - runtime color mode override (`light | dark | auto`)
 
+The config panel writes these same frontmatter fields surgically via
+`useFrontmatterField`; see [[frontmatter-support]].
+
 The config panel currently exposes:
 
 - primary color

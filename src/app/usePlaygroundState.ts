@@ -15,6 +15,7 @@ import { z } from 'zod/mini'
 
 import { DEBOUNCE_URL_MS } from '../config/constants'
 import SlidevErrorBlock from '../features/slides/components/SlidevErrorBlock.vue'
+import { errorMessage, tryRun } from '../utils/try-run'
 
 const STYLE_TAG_ID = 'slidev-custom-component-styles'
 
@@ -116,37 +117,36 @@ function readInitialState(defaults: PlaygroundDefaults): DecodedState {
     }
   }
 
-  try {
-    const raw = decompressFromEncodedURIComponent(hash)
-    if (!raw) {
-      return {
-        markdown: defaults.markdown,
-        componentFiles: { ...defaults.componentFiles },
-      }
-    }
-    return decodeState(raw, defaults.markdown)
-  } catch {
-    return {
-      markdown: defaults.markdown,
-      componentFiles: { ...defaults.componentFiles },
-    }
+  const fallback = (): DecodedState => ({
+    markdown: defaults.markdown,
+    componentFiles: { ...defaults.componentFiles },
+  })
+
+  const [error, raw] = tryRun(() => decompressFromEncodedURIComponent(hash))
+  if (error || !raw) {
+    return fallback()
   }
+  const [decodeError, decoded] = tryRun(() => decodeState(raw, defaults.markdown))
+  if (decodeError || !decoded) {
+    return fallback()
+  }
+  return decoded
 }
 
 function decodeState(raw: string, fallbackMarkdown: string): DecodedState {
   if (raw.startsWith('{')) {
-    try {
-      const result = UrlStateSchema.safeParse(JSON.parse(raw))
-      if (result.success) {
-        return {
-          markdown: result.data.m,
-          componentFiles: result.data.c ?? {},
-        }
-      }
-      return { markdown: fallbackMarkdown, componentFiles: {} }
-    } catch {
+    const [parseError, json] = tryRun<unknown>(() => JSON.parse(raw))
+    if (parseError) {
       return { markdown: fallbackMarkdown, componentFiles: {} }
     }
+    const result = UrlStateSchema.safeParse(json)
+    if (result.success) {
+      return {
+        markdown: result.data.m,
+        componentFiles: result.data.c ?? {},
+      }
+    }
+    return { markdown: fallbackMarkdown, componentFiles: {} }
   }
   return { markdown: raw, componentFiles: {} }
 }
@@ -287,38 +287,9 @@ function compileParsedComponents(defs: ParsedComponentDef[]): CompiledComponents
       continue
     }
 
-    try {
-      const render = compile(def.template)
-      const propsConfig: Record<
-        string,
-        {
-          type: (
-            | StringConstructor
-            | NumberConstructor
-            | BooleanConstructor
-            | ObjectConstructor
-            | ArrayConstructor
-          )[]
-          default: undefined
-        }
-      > = {}
-      for (const prop of def.props) {
-        propsConfig[prop] = {
-          type: [String, Number, Boolean, Object, Array],
-          default: undefined,
-        }
-      }
-
-      const component = markRaw(
-        defineComponent({
-          name: def.name,
-          props: propsConfig,
-          render,
-        }),
-      )
-      registerComponent(components, def.name, component)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to compile template.'
+    const [compileError, component] = tryRun(() => buildComponent(def))
+    if (compileError !== undefined || component === undefined) {
+      const message = errorMessage(compileError, 'Failed to compile template.')
       errors.push({
         filename: def.filename,
         componentName: def.name,
@@ -326,7 +297,12 @@ function compileParsedComponents(defs: ParsedComponentDef[]): CompiledComponents
         message,
       })
       registerComponent(components, def.name, createErrorComponent(def.name, message))
+      if (def.style) {
+        styles.push(def.style)
+      }
+      continue
     }
+    registerComponent(components, def.name, component)
 
     if (def.style) {
       styles.push(def.style)
@@ -334,6 +310,37 @@ function compileParsedComponents(defs: ParsedComponentDef[]): CompiledComponents
   }
 
   return { components, styles: styles.join('\n'), errors }
+}
+
+function buildComponent(def: ParsedComponentDef): Component {
+  const render = compile(def.template)
+  const propsConfig: Record<
+    string,
+    {
+      type: (
+        | StringConstructor
+        | NumberConstructor
+        | BooleanConstructor
+        | ObjectConstructor
+        | ArrayConstructor
+      )[]
+      default: undefined
+    }
+  > = {}
+  for (const prop of def.props) {
+    propsConfig[prop] = {
+      type: [String, Number, Boolean, Object, Array],
+      default: undefined,
+    }
+  }
+
+  return markRaw(
+    defineComponent({
+      name: def.name,
+      props: propsConfig,
+      render,
+    }),
+  )
 }
 
 function registerComponent(

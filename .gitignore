@@ -5,3 +5,6 @@ coverage
 .vitest-attachments
 *.local
 src/__screenshots__/
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.DS_Store

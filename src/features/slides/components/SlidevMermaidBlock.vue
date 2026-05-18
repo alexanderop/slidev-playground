@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import mermaid from 'mermaid'
 import { computed, ref, watchEffect } from 'vue'
+import { errorMessage, tryRunAsync } from '../../../utils/try-run'
 
 const { code } = defineProps<{
   code: string
@@ -23,18 +24,17 @@ watchEffect(async () => {
     mermaidInitialized = true
   }
 
-  try {
-    renderCounter += 1
-    const { svg: renderedSvg } = await mermaid.render(
-      `slidev-mermaid-${renderCounter}`,
-      decodedCode.value,
-    )
-    svg.value = renderedSvg
-    renderError.value = ''
-  } catch (error) {
+  renderCounter += 1
+  const [error, result] = await tryRunAsync(
+    mermaid.render(`slidev-mermaid-${renderCounter}`, decodedCode.value),
+  )
+  if (error || !result) {
     svg.value = ''
-    renderError.value = error instanceof Error ? error.message : 'Failed to render Mermaid diagram.'
+    renderError.value = errorMessage(error, 'Failed to render Mermaid diagram.')
+    return
   }
+  svg.value = result.svg
+  renderError.value = ''
 })
 </script>
 

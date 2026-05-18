@@ -5,6 +5,7 @@ import 'shiki-magic-move/dist/style.css'
 import { computed, inject, ref, shallowRef, watchEffect } from 'vue'
 import { presentationClickKey } from '../../../config/injection-keys'
 import { getShikiHighlighter } from '../shiki'
+import { tryRun } from '../../../utils/try-run'
 
 const { steps, lang } = defineProps<{
   steps: string
@@ -15,11 +16,11 @@ const currentClick = inject(presentationClickKey, ref(0))
 const highlighter = shallowRef<Highlighter | null>(null)
 
 const parsedSteps = computed<Array<{ code: string; lang: string }>>(() => {
-  try {
-    return JSON.parse(decodeURIComponent(steps))
-  } catch {
+  const [error, parsed] = tryRun(() => JSON.parse(decodeURIComponent(steps)))
+  if (error || !Array.isArray(parsed)) {
     return []
   }
+  return parsed
 })
 
 const currentStep = computed(() => {

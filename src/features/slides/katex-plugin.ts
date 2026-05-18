@@ -3,6 +3,7 @@ import type StateInline from 'markdown-it/lib/rules_inline/state_inline.mjs'
 import type StateBlock from 'markdown-it/lib/rules_block/state_block.mjs'
 import { renderToString } from 'katex'
 import { escapeHtmlAttribute } from '../../utils/string-utils'
+import { tryRun } from '../../utils/try-run'
 
 export type KatexPluginResult = { mathClicks: number }
 
@@ -165,23 +166,24 @@ export function katexPlugin(md: MarkdownIt, result: KatexPluginResult): void {
   })
 
   md.renderer.rules.math_inline = (tokens, idx) => {
-    try {
-      return escapeVue(renderToString(tokens[idx].content, { displayMode: false }))
-    } catch {
+    const [error, rendered] = tryRun(() =>
+      renderToString(tokens[idx].content, { displayMode: false }),
+    )
+    if (error || rendered === undefined) {
       return tokens[idx].content
     }
+    return escapeVue(rendered)
   }
 
   md.renderer.rules.math_block = (tokens, idx) => {
     const token = tokens[idx]
     const infoMatch = RE_KATEX_BLOCK_INFO.exec(token.info)
 
-    let html: string
-    try {
-      html = escapeVue(renderToString(token.content, { displayMode: true }))
-    } catch {
+    const [error, rendered] = tryRun(() => renderToString(token.content, { displayMode: true }))
+    if (error || rendered === undefined) {
       return `<p>${token.content}</p>`
     }
+    const html = escapeVue(rendered)
 
     if (infoMatch === null) {
       return `<p>${html}</p>\n`
