@@ -2,7 +2,9 @@ import type { Ref } from 'vue'
 import { closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
+import { codeFolding, foldGutter, foldKeymap } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
+import { search, searchKeymap } from '@codemirror/search'
 import { EditorState } from '@codemirror/state'
 import { oneDark } from '@codemirror/theme-one-dark'
 import {
@@ -57,12 +59,17 @@ export function useCodeMirror(
         drawSelection(),
         history(),
         closeBrackets(),
+        codeFolding(),
+        foldGutter(),
+        search({ top: true }),
         EditorView.lineWrapping,
         keymap.of([
           ...closeBracketsKeymap,
           ...completionKeymap,
           ...defaultKeymap,
           ...historyKeymap,
+          ...foldKeymap,
+          ...searchKeymap,
           indentWithTab,
         ]),
         markdown({ codeLanguages: languages }),

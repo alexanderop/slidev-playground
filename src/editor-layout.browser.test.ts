@@ -1,5 +1,11 @@
 import { AppPage } from './test-utils/page-objects/app-page'
-import { getEditorView, getMarkdown, pressKey, setMarkdown } from './test-utils/app-browser'
+import {
+  getEditorView,
+  getMarkdown,
+  pressKey,
+  setMarkdown,
+  settleApp,
+} from './test-utils/app-browser'
 import { TWO_SLIDE_DECK } from './test-utils/browser-test-fixtures'
 import { deck } from './test-utils/deck-builder'
 
@@ -44,11 +50,33 @@ it('Given the split pane When the user drags the divider Then the editor pane wi
   divider.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
   window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 200 }))
   window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
-  await new Promise((resolve) => {
-    setTimeout(resolve, 50)
-  })
+  await settleApp()
 
   expect(editorPane.style.width).not.toBe(startWidth)
+})
+
+it('Given the split pane When the user starts dragging Then a size readout appears with the preview dimensions', async () => {
+  using app = await AppPage.render({ markdown: TWO_SLIDE_DECK })
+
+  const divider = app.container.querySelector('.divider')
+  if (!(divider instanceof HTMLElement)) {
+    throw new Error('Expected divider element to exist')
+  }
+
+  expect(app.container.querySelector('.preview-size-readout')).toBeNull()
+
+  divider.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
+  window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 240 }))
+  await settleApp()
+
+  const readout = app.container.querySelector('.preview-size-readout')
+  expect(readout instanceof HTMLElement).toBe(true)
+  expect(readout?.textContent ?? '').toMatch(/\d+\s*px\s*×\s*\d+\s*px/)
+
+  window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
+  await settleApp()
+
+  expect(app.container.querySelector('.preview-size-readout')).toBeNull()
 })
 
 it('Given the editor is focused When the user presses Tab Then it indents instead of moving focus', async () => {

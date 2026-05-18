@@ -6,6 +6,9 @@ import pluginVue from 'eslint-plugin-vue'
 // Once oxlint gains full Vue template parsing (Q2 2026 milestone), this file can be removed.
 
 export default [
+  // Vendored upstream sources are read-only reference material
+  { ignores: ['repos/**'] },
+
   // Vue recommended preset (includes essential + strongly-recommended + recommended)
   ...pluginVue.configs['flat/recommended'],
 

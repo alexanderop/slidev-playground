@@ -1,18 +1,33 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import type { RenderedSlide } from '../../../types'
+import type { VNode } from 'vue'
 import { computed, ref } from 'vue'
 import CodeMirrorEditor from './CodeMirrorEditor.vue'
 import ConfigPanel from './ConfigPanel.vue'
+import EditorErrorOverlay from './EditorErrorOverlay.vue'
 import SlidePreview from '../../../components/SlidePreview.vue'
 
-const { markdown, componentFiles, renderedSlides, splitPercent, slideScale, copied } = defineProps<{
+const {
+  markdown,
+  componentFiles,
+  renderedSlides,
+  split,
+  slideScale,
+  copied,
+  editorErrors = [],
+} = defineProps<{
   markdown: string
   componentFiles: Record<string, string>
   renderedSlides: readonly RenderedSlide[]
-  splitPercent: number
+  split: {
+    percent: number
+    dragging: boolean
+    previewSize: { width: number; height: number }
+  }
   slideScale: number
   copied: boolean
+  editorErrors?: readonly string[]
 }>()
 
 const emit = defineEmits<{
@@ -28,8 +43,23 @@ const editorView = defineModel<EditorView | null>('editorView', { required: true
 
 const activeTab = ref<string>('slides.md')
 const configOpen = ref(false)
+const showOutput = ref(false)
+
+const renamingFile = ref<{ oldName: string; draft: string } | null>(null)
+const renameError = ref<string | null>(null)
+
+function focusRenameInput({ el }: VNode) {
+  if (el instanceof HTMLInputElement) {
+    el.focus()
+    el.select()
+  }
+}
 
 const fileNames = computed(() => Object.keys(componentFiles))
+
+const combinedErrors = computed<readonly string[]>(() =>
+  renameError.value === null ? editorErrors : [renameError.value, ...editorErrors],
+)
 
 function activeFileContent(): string {
   if (activeTab.value === 'slides.md') {
@@ -70,6 +100,49 @@ function removeFile(name: string) {
   if (activeTab.value === name) {
     activeTab.value = 'slides.md'
   }
+}
+
+function startRename(name: string) {
+  renamingFile.value = { oldName: name, draft: name }
+  renameError.value = null
+}
+
+function cancelRename() {
+  renamingFile.value = null
+}
+
+function commitRename() {
+  if (renamingFile.value === null) {
+    return
+  }
+  const { oldName } = renamingFile.value
+  const newName = renamingFile.value.draft.trim()
+
+  if (newName === '' || newName === oldName) {
+    cancelRename()
+    return
+  }
+
+  if (!newName.endsWith('.vue')) {
+    renameError.value = `Component files must end in .vue (got "${newName}").`
+    return
+  }
+
+  if (componentFiles[newName] !== undefined) {
+    renameError.value = `File "${newName}" already exists.`
+    return
+  }
+
+  const renamed: Record<string, string> = {}
+  for (const [key, value] of Object.entries(componentFiles)) {
+    renamed[key === oldName ? newName : key] = value
+  }
+  emit('update:componentFiles', renamed)
+  if (activeTab.value === oldName) {
+    activeTab.value = newName
+  }
+  renameError.value = null
+  cancelRename()
 }
 </script>
 
@@ -133,8 +206,8 @@ function removeFile(name: string) {
       </div>
     </header>
 
-    <div class="split-pane">
-      <div class="editor-pane" :style="{ width: `${splitPercent}%` }">
+    <div class="split-pane" :class="{ 'show-output': showOutput }">
+      <div class="editor-pane" :style="{ width: `${split.percent}%` }">
         <div class="pane-header pane-tabs">
           <button
             class="pane-tab"
@@ -143,23 +216,35 @@ function removeFile(name: string) {
           >
             slides.md
           </button>
-          <button
-            v-for="name in fileNames"
-            :key="name"
-            class="pane-tab"
-            :class="{ active: activeTab === name }"
-            @click="activeTab = name"
-          >
-            {{ name }}
-            <span
-              class="tab-close"
-              role="button"
-              :aria-label="`Remove ${name}`"
-              @click.stop="removeFile(name)"
+          <template v-for="name in fileNames" :key="name">
+            <input
+              v-if="renamingFile && renamingFile.oldName === name"
+              v-model="renamingFile.draft"
+              class="pane-tab pane-tab-rename"
+              spellcheck="false"
+              @blur="commitRename"
+              @keyup.enter="commitRename"
+              @keyup.esc="cancelRename"
+              @vue:mounted="focusRenameInput"
+            />
+            <button
+              v-else
+              class="pane-tab"
+              :class="{ active: activeTab === name }"
+              @click="activeTab = name"
+              @dblclick="startRename(name)"
             >
-              &times;
-            </span>
-          </button>
+              {{ name }}
+              <span
+                class="tab-close"
+                role="button"
+                :aria-label="`Remove ${name}`"
+                @click.stop="removeFile(name)"
+              >
+                &times;
+              </span>
+            </button>
+          </template>
           <button class="pane-tab pane-tab-add" aria-label="Add component" @click="addFile">
             +
           </button>
@@ -170,13 +255,17 @@ function removeFile(name: string) {
           :model-value="activeFileContent()"
           @update:model-value="onEditorUpdate"
         />
+        <EditorErrorOverlay :errors="combinedErrors" />
       </div>
 
       <div class="divider" @mousedown.prevent="$emit('startDrag')"></div>
 
-      <div class="preview-pane" :style="{ width: `${100 - splitPercent}%` }">
+      <div class="preview-pane" :style="{ width: `${100 - split.percent}%` }">
         <div class="pane-header">
           <span>Preview</span>
+        </div>
+        <div v-if="split.dragging" class="preview-size-readout" aria-hidden="true">
+          {{ split.previewSize.width }}px × {{ split.previewSize.height }}px
         </div>
         <div ref="previewRef" class="preview-scroll">
           <SlidePreview
@@ -191,6 +280,10 @@ function removeFile(name: string) {
         </div>
         <ConfigPanel v-if="configOpen" @close="configOpen = false" />
       </div>
+
+      <button type="button" class="mobile-toggler" @click="showOutput = !showOutput">
+        {{ showOutput ? '< Code' : 'Preview >' }}
+      </button>
     </div>
   </div>
 </template>
@@ -338,6 +431,7 @@ function removeFile(name: string) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 .pane-header {
@@ -414,6 +508,19 @@ function removeFile(name: string) {
   opacity: 1;
 }
 
+.pane-tab-rename {
+  border: 1px solid var(--shell-border-active);
+  border-radius: 4px;
+  background: var(--shell-bg-surface);
+  color: var(--shell-text);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 4px 8px;
+  margin: 2px 4px;
+  outline: none;
+  min-width: 90px;
+}
+
 .preview-pane {
   display: flex;
   flex-direction: column;
@@ -429,5 +536,73 @@ function removeFile(name: string) {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.preview-size-readout {
+  position: absolute;
+  top: 40px;
+  left: 10px;
+  z-index: 50;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--shell-text-dim);
+  background: var(--shell-bg-surface);
+  border: 1px solid var(--shell-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  pointer-events: none;
+}
+
+.mobile-toggler {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--shell-text);
+  background: var(--shell-bg-surface);
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+}
+
+.mobile-toggler:hover {
+  border-color: var(--shell-border-active);
+}
+
+@media (max-width: 720px) {
+  .split-pane .editor-pane,
+  .split-pane .preview-pane {
+    position: absolute;
+    inset: 0;
+    width: auto !important;
+  }
+
+  .split-pane .divider {
+    display: none;
+  }
+
+  .split-pane .preview-pane,
+  .split-pane.show-output .editor-pane {
+    z-index: 1;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .split-pane .editor-pane,
+  .split-pane.show-output .preview-pane {
+    z-index: 2;
+    pointer-events: auto;
+    visibility: visible;
+  }
+
+  .mobile-toggler {
+    display: inline-flex;
+  }
 }
 </style>

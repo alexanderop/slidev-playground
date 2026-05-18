@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EditorView } from '@codemirror/view'
 import { parseSync } from '@slidev/parser'
-import { useFullscreen } from '@vueuse/core'
+import { useElementSize, useFullscreen } from '@vueuse/core'
 import { computed, provide, ref } from 'vue'
 
 import EditorLayout from '../features/editor/components/EditorLayout.vue'
@@ -30,16 +30,34 @@ import { defaultComponentFiles, defaultContent } from '../config/default-content
 import { getOptionalRecord, getOptionalString } from '../utils/type-guards'
 import { resolveSlidesFromMarkdown } from '../features/slides/imports'
 import { useSlideRenderer } from '../features/slides/render'
+import { errorMessage, tryRun } from '../utils/try-run'
 
 const playground = usePlaygroundState({
   markdown: defaultContent,
   componentFiles: defaultComponentFiles,
 })
-const { markdown, componentFiles, customComponents, share, copied } = playground
+const { markdown, componentFiles, customComponents, compileErrors, share, copied } = playground
 provide(markdownKey, markdown)
 provide(componentFilesKey, componentFiles)
 
-const parsed = computed(() => parseSync(markdown.value, 'slides.md'))
+const EMPTY_PARSED = parseSync('', 'slides.md')
+
+const parseAttempt = computed(() => tryRun(() => parseSync(markdown.value, 'slides.md')))
+const parsed = computed(() => parseAttempt.value[1] ?? EMPTY_PARSED)
+const parseError = computed(() => {
+  const [err] = parseAttempt.value
+  return err === undefined ? null : errorMessage(err, 'Failed to parse slides.')
+})
+const editorErrors = computed<readonly string[]>(() => {
+  const errors: string[] = []
+  if (parseError.value !== null) {
+    errors.push(parseError.value)
+  }
+  for (const err of compileErrors.value) {
+    errors.push(`${err.filename}: ${err.message}`)
+  }
+  return errors
+})
 const resolvedSlides = computed(() => resolveSlidesFromMarkdown(markdown.value, 'slides.md'))
 
 const { config } = useHeadmatter(parsed)
@@ -102,7 +120,12 @@ provide(effectiveModeKey, effectiveMode)
 const previewRef = ref<HTMLElement | null>(null)
 const editorView = ref<EditorView | null>(null)
 const { slideScale, updateScale } = useSlideScale(previewRef, slideDimensions)
-const { splitPercent, startDrag } = useSplitPane(updateScale)
+const { splitPercent, dragging, startDrag } = useSplitPane(updateScale)
+const { width: previewWidth, height: previewHeight } = useElementSize(previewRef)
+const previewSize = computed(() => ({
+  width: Math.round(previewWidth.value),
+  height: Math.round(previewHeight.value),
+}))
 
 useScrollSync(
   editorView,
@@ -137,9 +160,10 @@ useScrollSync(
     :markdown="markdown"
     :component-files="componentFiles"
     :rendered-slides="renderedSlides"
-    :split-percent="splitPercent"
+    :split="{ percent: splitPercent, dragging, previewSize }"
     :slide-scale="slideScale"
     :copied="copied"
+    :editor-errors="editorErrors"
     @update:markdown="markdown = $event"
     @update:component-files="componentFiles = $event"
     @share="share"

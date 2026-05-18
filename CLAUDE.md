@@ -56,3 +56,9 @@ and plans.
 - **Write** after mistakes, corrections, or notable codebase learnings.
 - **Structure:** One topic per file. Directories with `[[wikilink]]` indexes — no inlined content.
 - **Maintain:** Delete outdated notes and stale artifacts.
+
+## Reference repositories
+
+Source-of-truth code for libraries we depend on. Treat as **read-only reference material** — do not edit files under `repos/`. When asked about a library listed below, explore its source here first instead of guessing or relying on training data.
+
+- `repos/repl/` — https://github.com/vuejs/repl @ main (squashed)
